@@ -67,14 +67,15 @@ modaEstadistica xs = snd (foldr (\x rec -> if fst x > fst rec then x else rec) (
 knn :: Int -> Datos -> [Etiqueta] -> Medida -> Modelo
 knn k datos etiquetas medida = \instancia -> modaEstadistica (map snd (take k (sort (zip (distanciasAInstancia datos medida instancia) etiquetas))))
 
+separarDatos :: Datos -> [Etiqueta] -> Int -> Int -> (Datos, Datos, [Etiqueta], [Etiqueta])
+separarDatos datos etiquetas n p = (take n datos, drop n datos, take n etiquetas, drop n etiquetas)
+
 accuracy :: [Etiqueta] -> [Etiqueta] -> Float
 accuracy predicciones etiquetas= sum (map boolAFloat (zipWith (==)  predicciones etiquetas)) / (genericLength predicciones)
         where boolAFloat b
                     | b == True = 1.0
                     | otherwise = 0.0
 
-separarDatos :: Datos -> [Etiqueta] -> Int -> Int -> (Datos, Datos, [Etiqueta], [Etiqueta])
-separarDatos = undefined
-
 nFoldCrossValidation :: Int -> Datos -> [Etiqueta] -> Float
-nFoldCrossValidation = undefined
+nFoldCrossValidation n datos etiquetas = mean [ obtenerAccuracy (separarDatos datos etiquetas n fold) | fold <- [1..n] ]
+        where obtenerAccuracy (x_train, x_val, y_train, y_val) = accuracy (map (knn 15 x_train y_train distEuclideana) x_val) y_val
