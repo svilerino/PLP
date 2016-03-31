@@ -20,16 +20,16 @@ mean :: [Float] -> Float
 mean xs = realToFrac (sum xs) / genericLength xs
 
 split :: Eq a => a -> [a] -> [[a]]
-split x xs = foldr (\y rec -> if y == x then []:rec else (if null rec then [[y]] else (y:head rec):(tail rec))) [] xs
+split x = foldr (\y rec -> if y == x then []:rec else (if null rec then [[y]] else (y:head rec):(tail rec))) []
 
 longitudPromedioPalabras :: Extractor
-longitudPromedioPalabras text = mean $ map genericLength $ split ' ' text
+longitudPromedioPalabras texto = mean $ map genericLength $ split ' ' texto
 
 cuentas :: Eq a => [a] -> [(Int, a)]
-cuentas = undefined
+cuentas xs = [(length $ filter (x==) xs, x) | x <- nub xs]
 
 repeticionesPromedio :: Extractor
-repeticionesPromedio = undefined
+repeticionesPromedio texto = mean $ map (fromIntegral . fst) $ cuentas $ split ' ' texto
 
 tokens :: [Char]
 tokens = "_,)(*;-=>/.{}\"&:+#[]<|%!\'@?~^$` abcdefghijklmnopqrstuvwxyz0123456789"
