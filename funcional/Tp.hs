@@ -47,7 +47,7 @@ extraerFeatures :: [Extractor] -> [Texto] -> Datos
 extraerFeatures extractores textos = map (\texto -> map (\extractor -> (normalizarExtractor textos extractor) texto) extractores) textos
 
 distEuclideana :: Medida
-distEuclideana = undefined
+distEuclideana p q = sqrt $ sum $ map (**2) $ zipWith (-) p q
 
 distCoseno :: Medida
 distCoseno = undefined
