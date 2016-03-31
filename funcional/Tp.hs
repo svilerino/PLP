@@ -67,8 +67,16 @@ modaEstadistica xs = snd (foldr (\x rec -> if fst x > fst rec then x else rec) (
 knn :: Int -> Datos -> [Etiqueta] -> Medida -> Modelo
 knn k datos etiquetas medida = \instancia -> modaEstadistica (map snd (take k (sort (zip (distanciasAInstancia datos medida instancia) etiquetas))))
 
+obtenerSalvoParticion :: Int -> Int -> [a] -> [a]
+obtenerSalvoParticion n p xs = take ((p - 1) * longParticion) xs ++ take ((n - p) * longParticion) (drop (p * longParticion) xs)
+        where longParticion = (length xs) `div` n
+
+obtenerParticion :: Int -> Int -> [a] -> [a]
+obtenerParticion n p xs = take longParticion (drop ((p - 1) * longParticion) xs)
+        where longParticion = (length xs) `div` n
+
 separarDatos :: Datos -> [Etiqueta] -> Int -> Int -> (Datos, Datos, [Etiqueta], [Etiqueta])
-separarDatos datos etiquetas n p = (take n datos, drop n datos, take n etiquetas, drop n etiquetas)
+separarDatos datos etiquetas n p = (obtenerSalvoParticion n p datos, obtenerParticion n p datos, obtenerSalvoParticion n p etiquetas, obtenerParticion n p etiquetas)
 
 accuracy :: [Etiqueta] -> [Etiqueta] -> Float
 accuracy predicciones etiquetas= sum (map boolAFloat (zipWith (==)  predicciones etiquetas)) / (genericLength predicciones)
