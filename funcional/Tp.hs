@@ -25,8 +25,11 @@ split x = foldr (\y rec -> if y == x then []:rec else (if null rec then [[y]] el
 longitudPromedioPalabras :: Extractor
 longitudPromedioPalabras texto = mean $ map genericLength $ split ' ' texto
 
+apariciones :: Eq a => a -> [a] -> Int
+apariciones x xs = length $ filter (x==) xs
+
 cuentas :: Eq a => [a] -> [(Int, a)]
-cuentas xs = [(length $ filter (x==) xs, x) | x <- nub xs]
+cuentas xs = [(apariciones x xs, x) | x <- nub xs]
 
 repeticionesPromedio :: Extractor
 repeticionesPromedio texto = mean $ map (fromIntegral . fst) $ cuentas $ split ' ' texto
@@ -35,7 +38,7 @@ tokens :: [Char]
 tokens = "_,)(*;-=>/.{}\"&:+#[]<|%!\'@?~^$` abcdefghijklmnopqrstuvwxyz0123456789"
 
 frecuenciaTokens :: [Extractor]
-frecuenciaTokens = undefined
+frecuenciaTokens = [ \xs -> (fromIntegral $ apariciones token xs) / (fromIntegral $ length xs) | token <- tokens]
 
 normalizarExtractor :: [Texto] -> Extractor -> Extractor
 normalizarExtractor = undefined
