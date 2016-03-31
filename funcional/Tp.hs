@@ -44,7 +44,7 @@ normalizarExtractor :: [Texto] -> Extractor -> Extractor
 normalizarExtractor = undefined
 
 extraerFeatures :: [Extractor] -> [Texto] -> Datos
-extraerFeatures = undefined
+extraerFeatures extractores textos = map (\texto -> map (\extractor -> (normalizarExtractor textos extractor) texto) extractores) textos
 
 distEuclideana :: Medida
 distEuclideana = undefined
