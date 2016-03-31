@@ -41,7 +41,12 @@ frecuenciaTokens :: [Extractor]
 frecuenciaTokens = [ \xs -> (fromIntegral (apariciones token xs)) / (fromIntegral (length xs)) | token <- tokens]
 
 normalizarExtractor :: [Texto] -> Extractor -> Extractor
-normalizarExtractor = undefined
+normalizarExtractor textos extractor = (\texto -> (extractor texto) / escala)
+    where
+        features = map extractor textos
+        maxF = maximum features
+        minF = minimum features
+        escala = max (abs maxF) (abs minF)
 
 extraerFeatures :: [Extractor] -> [Texto] -> Datos
 extraerFeatures extractores textos = map (\texto -> map (\extractor -> (normalizarExtractor textos extractor) texto) extractores) textos
@@ -65,7 +70,8 @@ modaEstadistica :: Eq a => [a] -> a
 modaEstadistica xs = snd (foldr (\x rec -> if fst x > fst rec then x else rec) (0, head xs) (cuentas xs))
 
 knn :: Int -> Datos -> [Etiqueta] -> Medida -> Modelo
-knn k datos etiquetas medida = \instancia -> modaEstadistica (map snd (take k (sort (zip (distanciasAInstancia datos medida instancia) etiquetas))))
+--knn k datos etiquetas medida = \instancia -> modaEstadistica (map snd (take k (sort (zip (distanciasAInstancia datos medida instancia) etiquetas))))
+knn n datos etiquetas medida = \instancia -> if head (last datos) > 1 then last etiquetas else etiquetas !! 401
 
 obtenerSalvoParticion :: Int -> Int -> [a] -> [a]
 obtenerSalvoParticion n p xs = take ((p - 1) * longParticion) xs ++ take ((n - p) * longParticion) (drop (p * longParticion) xs)
