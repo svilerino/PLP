@@ -49,8 +49,14 @@ extraerFeatures extractores textos = map (\texto -> map (\extractor -> (normaliz
 distEuclideana :: Medida
 distEuclideana p q = sqrt $ sum $ map (**2) $ zipWith (-) p q
 
+prodVectorial :: [Float] -> [Float] -> Float
+prodVectorial p q = sum $ zipWith (*) p q
+
+normaVectorial :: [Float] -> Float
+normaVectorial p = sqrt $ prodVectorial p p
+
 distCoseno :: Medida
-distCoseno = undefined
+distCoseno p q = (prodVectorial p q) / (normaVectorial p * normaVectorial q)
 
 knn :: Int -> Datos -> [Etiqueta] -> Medida -> Modelo
 knn = undefined
