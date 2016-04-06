@@ -13,7 +13,7 @@ type Modelo = (Instancia -> Etiqueta)
 type Medida = (Instancia -> Instancia -> Float)
 
 tryClassifier :: [Texto] -> [Etiqueta] -> Float
-tryClassifier x y = let xs = extraerFeaturesFast ([longitudPromedioPalabras, repeticionesPromedio] ++ frecuenciaTokens) x in
+tryClassifier x y = let xs = extraerFeatures ([longitudPromedioPalabras, repeticionesPromedio] ++ frecuenciaTokens) x in
     nFoldCrossValidation 5 xs y
 
 mean :: [Float] -> Float
@@ -41,10 +41,10 @@ frecuenciaTokens :: [Extractor]
 frecuenciaTokens = [ \xs -> (fromIntegral (apariciones token xs)) / (fromIntegral (length xs)) | token <- tokens]
 
 normalizarExtractor :: [Texto] -> Extractor -> Extractor
-normalizarExtractor textos extractor = (\texto -> (extractor texto) / (if escala > 0 then escala else 1))
-    where
-        features = map extractor textos        
-        escala = foldl (\rec x -> max rec (abs x)) 0 features
+normalizarExtractor textos extractor = let
+                                        features = map extractor textos        
+                                        escala = foldl (\rec x -> max rec (abs x)) 0 features
+                                        in (\texto -> (extractor texto) / (if escala > 0 then escala else 1))
 
 extraerFeatures :: [Extractor] -> [Texto] -> Datos
 extraerFeatures extractores textos = map (\texto -> map (\extractor -> (normalizarExtractor textos extractor) texto) extractores) textos
