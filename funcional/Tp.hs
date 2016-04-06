@@ -13,8 +13,9 @@ type Modelo = (Instancia -> Etiqueta)
 type Medida = (Instancia -> Instancia -> Float)
 
 tryClassifier :: [Texto] -> [Etiqueta] -> Float
-tryClassifier x y = let xs = extraerFeatures ([longitudPromedioPalabras, repeticionesPromedio] ++ frecuenciaTokens) x in
-    nFoldCrossValidation 5 xs y
+tryClassifier x y = let 
+                                xs = extraerFeatures ([longitudPromedioPalabras, repeticionesPromedio] ++ frecuenciaTokens) x 
+                                in nFoldCrossValidation 5 xs y
 
 mean :: [Float] -> Float
 mean xs = realToFrac (sum xs) / genericLength xs
@@ -42,22 +43,14 @@ frecuenciaTokens = [ \xs -> (fromIntegral (apariciones token xs)) / (fromIntegra
 
 normalizarExtractor :: [Texto] -> Extractor -> Extractor
 normalizarExtractor textos extractor = let
-                                        features = map extractor textos        
-                                        escala = foldl (\rec x -> max rec (abs x)) 0 features
-                                        in (\texto -> (extractor texto) / (if escala > 0 then escala else 1))
+                                                                    features = map extractor textos        
+                                                                    escala = foldl (\rec x -> max rec (abs x)) 0 features
+                                                                    in (\texto -> (extractor texto) / (if escala > 0 then escala else 1))
 
 extraerFeatures :: [Extractor] -> [Texto] -> Datos
-extraerFeatures extractores textos = map (\texto -> map (\extractor -> (normalizarExtractor textos extractor) texto) extractores) textos
-
-normalizarExtractorDadosFeatures :: [Feature] -> Extractor -> Extractor
-normalizarExtractorDadosFeatures features extractor = (\texto -> (extractor texto) / (if escala > 0 then escala else 1))
-    where escala = foldl (\rec x -> max rec (abs x)) 0 features
-
-extraerFeaturesFast :: [Extractor] -> [Texto] -> Datos
-extraerFeaturesFast extractores textos = map (\texto -> map (\extractor -> extractor texto) extractoresNormalizados) textos
-    where
-        extractoresNormalizados = zipWith normalizarExtractorDadosFeatures datosNoNormalizados extractores
-        datosNoNormalizados = map (\extractor -> map (\texto -> extractor texto) textos) extractores
+extraerFeatures extractores textos = let
+                                                                extractoresNorm = map (\extractor -> normalizarExtractor textos extractor) extractores
+                                                                in  map (\texto -> map (\extractor -> extractor texto) extractoresNorm) textos
 
 distEuclideana :: Medida
 distEuclideana p q = sqrt (sum (map (**2) (zipWith (-) p q)))
@@ -81,12 +74,18 @@ knn :: Int -> Datos -> [Etiqueta] -> Medida -> Modelo
 knn k datos etiquetas medida = \instancia -> modaEstadistica (map snd (take k (sort (zip (distanciasAInstancia datos medida instancia) etiquetas))))
 
 obtenerSalvoParticion :: Int -> Int -> [a] -> [a]
-obtenerSalvoParticion n p xs = take ((p - 1) * longParticion) xs ++ take ((n - p) * longParticion) (drop (p * longParticion) xs)
-        where longParticion = (length xs) `div` n
+obtenerSalvoParticion n p xs = let
+                                                    longParticion = (length xs) `div` n
+                                                    longPrimerParte = (p - 1) * longParticion
+                                                    longUltimaParte = (n - p) * longParticion
+                                                    longHastaUltimaParte = longPrimerParte + longParticion
+                                                    in take longPrimerParte xs ++ take longUltimaParte (drop longHastaUltimaParte xs)
 
 obtenerParticion :: Int -> Int -> [a] -> [a]
-obtenerParticion n p xs = take longParticion (drop ((p - 1) * longParticion) xs)
-        where longParticion = (length xs) `div` n
+obtenerParticion n p xs = let
+                                            longParticion = (length xs) `div` n
+                                            longPrimerParte = (p - 1) * longParticion
+                                            in take longParticion (drop longPrimerParte xs)
 
 separarDatos :: Datos -> [Etiqueta] -> Int -> Int -> (Datos, Datos, [Etiqueta], [Etiqueta])
 separarDatos datos etiquetas n p = (obtenerSalvoParticion n p datos, obtenerParticion n p datos, obtenerSalvoParticion n p etiquetas, obtenerParticion n p etiquetas)

@@ -16,7 +16,6 @@ allTests = test [
             "frecuenciaTokens" ~: testsFrecuenciaTokens,
             --"normalizarExtractor" ~: testsNormalizarExtractor,
             "extraerFeatures" ~: testsExtraerFeatures,
-            "extraerFeaturesFast" ~: testsExtraerFeaturesFast,
             "distEuclideana" ~: testsDistEuclideana,
             "distCoseno" ~: testsDistCoseno,
             "knn" ~: testsKnn,
@@ -54,10 +53,6 @@ ts = ["b=a", "a = 2; a = 4", "C:/DOS C:/DOS/RUN RUN/DOS/RUN"]
 
 testsExtraerFeatures = test [
             extraerFeatures [longitudPromedioPalabras, repeticionesPromedio] ts ~?= [[0.33333334,0.6666667],[0.12962963,1.0],[1.0,0.6666667]]
-            ]
-
-testsExtraerFeaturesFast = test [
-            extraerFeaturesFast [longitudPromedioPalabras, repeticionesPromedio] ts ~?= [[0.33333334,0.6666667],[0.12962963,1.0],[1.0,0.6666667]]
             ]
 
 testsDistEuclideana = test [
