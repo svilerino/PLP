@@ -2,6 +2,7 @@ import System.IO
 import System.Directory
 import Data.List
 import Tp
+--import Solucion
 import System.Random
 
 shuffle :: [a] -> IO [a]
@@ -31,7 +32,7 @@ readAll category = do
 main = do
     (tags1, contents1) <- readAll "funcional"
     (tags2, contents2) <- readAll "imperativo"
-    --(tagsUnk, contentsUnk) <- readAll "alumnos"
+    -- (tagsUnk, contentsUnk) <- readAll "alumnos"
     print $ "Funcional: " ++ (show $ length tags1) ++ " instancias"
     print $ "Imperativo: " ++ (show $ length tags2) ++ " instancias"
     let x = (contents1 ++ contents2)
@@ -39,7 +40,7 @@ main = do
     shuffled <- shuffle (zip x y)
     let (x_shuffled, y_shuffled) = unzip shuffled
     print $ tryClassifier x_shuffled y_shuffled
-    --print $ tryClassifierUnk x_shuffled y_shuffled contentsUnk
+    -- print $ tryClassifierUnk x_shuffled y_shuffled contentsUnk
     let length_class_1 = genericLength (filter (\x -> x == (head y)) y)
     let random_acc = length_class_1 / (genericLength y)
     print $ "random value: " ++ show random_acc
