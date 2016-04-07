@@ -29,20 +29,28 @@ readAll category = do
   setCurrentDirectory "../"
   return $ (tags, contents)
 
---extraerFeatures ([longitudPromedioPalabras, repeticionesPromedio] ++ tfIdfTokens x)
-  
+crearKnn :: Int -> Medida -> ConstructorModelo
+crearKnn k medida = (\x y -> knn k x y medida)
+
+crearKnnPesado :: Int -> Medida -> ConstructorModelo
+crearKnnPesado k medida = (\x y -> knnPesado k x y medida)
+
 main = do
     (tags1, contents1) <- readAll "funcional"
     (tags2, contents2) <- readAll "imperativo"
-    -- (tagsUnk, contentsUnk) <- readAll "alumnos"
     print $ "Funcional: " ++ (show $ length tags1) ++ " instancias"
     print $ "Imperativo: " ++ (show $ length tags2) ++ " instancias"
     let x = (contents1 ++ contents2)
     let y = (tags1 ++ tags2)
     shuffled <- shuffle (zip x y)
     let (x_shuffled, y_shuffled) = unzip shuffled
-    print $ "Accuracy promedio: " ++ (show $ tryClassifier features y_shuffled)
-    -- print $ tryClassifierUnk x_shuffled y_shuffled contentsUnk
-    let length_class_1 = genericLength (filter (\x -> x == (head y)) y)
-    let random_acc = length_class_1 / (genericLength y)
-    print $ "random value: " ++ show random_acc
+    let features = let extractores = (tfIdfTokens x_shuffled) in map (\texto -> map (\extractor -> extractor texto) extractores) x_shuffled
+
+    print "Knn con Distancia Coseno"
+    print $ show [(k, nFoldCrossValidationGenerico 5 features y_shuffled (crearKnn k distCoseno)) | k <- [3..21], k `mod` 2 == 1 ]
+    print "KnnPesado con Distancia Coseno"
+    print $ show [(k, nFoldCrossValidationGenerico 5 features y_shuffled (crearKnnPesado k distCoseno)) | k <- [3..21], k `mod` 2 == 1 ]
+    print "Knn con Distancia Euclideana"
+    print $ show [(k, nFoldCrossValidationGenerico 5 features y_shuffled (crearKnn k distEuclideana)) | k <- [3..21], k `mod` 2 == 1 ]
+    print "KnnPesado con Distancia Euclideana"
+    print $ show [(k, nFoldCrossValidationGenerico 5 features y_shuffled (crearKnnPesado k distEuclideana)) | k <- [3..21], k `mod` 2 == 1 ]

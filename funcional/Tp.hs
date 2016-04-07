@@ -1,6 +1,8 @@
 module Tp where
 
 import Data.List
+import Data.Set (Set)
+import qualified Data.Set as Set
 
 type Texto = String
 type Feature = Float
@@ -39,7 +41,7 @@ tokens :: [Char]
 tokens = "_,)(*;-=>/.{}\"&:+#[]<|%!\'@?~^$` abcdefghijklmnopqrstuvwxyz0123456789"
 
 frecuenciaTokens :: [Extractor]
-frecuenciaTokens = [ \xs -> (fromIntegral (apariciones token xs)) / (fromIntegral (length xs)) | token <- tokens]
+frecuenciaTokens = [ \texto -> (fromIntegral (apariciones token texto)) / (fromIntegral (length texto)) | token <- tokens]
 
 normalizarExtractor :: [Texto] -> Extractor -> Extractor
 normalizarExtractor textos extractor = let
@@ -102,6 +104,25 @@ nFoldCrossValidation n datos etiquetas = mean [ obtenerAccuracy (separarDatos da
 
 -- Hasta aca va el tp. Ahora implementamos un clasificador nuevo
 
+idf :: Char -> [Set Char] -> Float
+idf token sets = log (genericLength sets / (1.0 + (sum (map (\set -> boolAFloat(Set.member token set)) sets))))
+    where boolAFloat b
+                    | b == True = 1.0
+                    | otherwise = 0.0
+
+tfIdf :: Char -> [Set Char] -> Extractor                     
+tfIdf token sets = \texto -> let 
+                        frecuenciaToken = apariciones token texto
+                        resultado   | frecuenciaToken == 0 = 0
+                                    | otherwise = fromIntegral (frecuenciaToken) * (idf token sets)
+                        in resultado
+
+setAparicionesTokens :: [Texto] -> [Set Char]
+setAparicionesTokens textos = map (\texto -> Set.fromList [token | token <- tokens, token `elem` texto] ) textos 
+                        
+tfIdfTokens :: [Texto] -> [Extractor]
+tfIdfTokens textos = let sets = setAparicionesTokens textos in [ tfIdf token sets | token <- tokens ]
+
 sumarPesos :: (Eq a, Ord a) => [(Float, a)] -> [(Float, a)]
 sumarPesos xs = foldr (\x rec -> if null rec then [x] else chequearYAgregar x rec) [] (sort xs) 
                                 where 
@@ -114,23 +135,11 @@ modaEstadisticaPesada xs = snd (foldr (\x rec -> if fst x > fst rec then x else 
 invertirDistancias :: [(Float, a)] -> [(Float, a)]
 invertirDistancias = map (\(peso, etiqueta) -> (1.0 /  peso, etiqueta))
 
---knnPesado2 :: Int -> Datos -> [Etiqueta] -> Medida -> Modelo
---knnPesado2 k datos etiquetas medida = \instancia -> modaEstadisticaPesada (kMasCercanosConPesos instancia)
---                                                                where
---                                                                    kMasCercanosConPesos instancia = map invertirDistancias (kMasCercanos instancia)
---                                                                    kMasCercanos instancia = zip (distancias instancia) etiquetas
---                                                                    distancias instancia = map (medida instancia) datos
-
 knnPesado :: Int -> Datos -> [Etiqueta] -> Medida -> Modelo
-knnPesado k datos etiquetas medida = \instancia -> modaEstadisticaPesada ( invertirDistancias (take k (sort (zip (distanciasAInstancia datos medida instancia) etiquetas))))
+knnPesado k datos etiquetas medida = \instancia -> modaEstadisticaPesada (invertirDistancias (take k (sort (zip (distanciasAInstancia datos medida instancia) etiquetas))))
 
 type ConstructorModelo = (Datos -> [Etiqueta] ->Modelo)
 
 nFoldCrossValidationGenerico :: Int -> Datos -> [Etiqueta] -> ConstructorModelo -> Float
 nFoldCrossValidationGenerico n datos etiquetas constructorModelo = mean [ obtenerAccuracy (separarDatos datos etiquetas n fold) | fold <- [1..n] ]
         where obtenerAccuracy (x_train, x_val, y_train, y_val) = accuracy (map (constructorModelo x_train y_train) x_val) y_val
-
-tryClassifierGenerico :: [Texto] -> [Etiqueta] -> ConstructorModelo -> Float
-tryClassifierGenerico x y constructorModelo = let 
-                                xs = extraerFeatures ([longitudPromedioPalabras, repeticionesPromedio] ++ frecuenciaTokens) x 
-                                in nFoldCrossValidationGenerico 5 xs y constructorModelo
