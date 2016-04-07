@@ -99,3 +99,38 @@ accuracy predicciones etiquetas= sum (map boolAFloat (zipWith (==)  predicciones
 nFoldCrossValidation :: Int -> Datos -> [Etiqueta] -> Float
 nFoldCrossValidation n datos etiquetas = mean [ obtenerAccuracy (separarDatos datos etiquetas n fold) | fold <- [1..n] ]
         where obtenerAccuracy (x_train, x_val, y_train, y_val) = accuracy (map (knn 15 x_train y_train distEuclideana) x_val) y_val
+
+-- Hasta aca va el tp. Ahora implementamos un clasificador nuevo
+
+sumarPesos :: (Eq a, Ord a) => [(Float, a)] -> [(Float, a)]
+sumarPesos xs = foldr (\x rec -> if null rec then [x] else chequearYAgregar x rec) [] (sort xs) 
+                                where 
+                                    chequearYAgregar x rec = if snd (head rec) == snd x then agregarACabeza x rec else [x] ++ rec
+                                    agregarACabeza x rec = [(fst x + fst (head rec), snd x)] ++ tail rec
+
+modaEstadisticaPesada :: (Eq a, Ord a) => [(Float, a)] -> a
+modaEstadisticaPesada xs = snd (foldr (\x rec -> if fst x > fst rec then x else rec) (head xs) (sumarPesos xs))
+
+invertirDistancias :: [(Float, a)] -> [(Float, a)]
+invertirDistancias = map (\(peso, etiqueta) -> (1.0 /  peso, etiqueta))
+
+--knnPesado2 :: Int -> Datos -> [Etiqueta] -> Medida -> Modelo
+--knnPesado2 k datos etiquetas medida = \instancia -> modaEstadisticaPesada (kMasCercanosConPesos instancia)
+--                                                                where
+--                                                                    kMasCercanosConPesos instancia = map invertirDistancias (kMasCercanos instancia)
+--                                                                    kMasCercanos instancia = zip (distancias instancia) etiquetas
+--                                                                    distancias instancia = map (medida instancia) datos
+
+knnPesado :: Int -> Datos -> [Etiqueta] -> Medida -> Modelo
+knnPesado k datos etiquetas medida = \instancia -> modaEstadisticaPesada ( invertirDistancias (take k (sort (zip (distanciasAInstancia datos medida instancia) etiquetas))))
+
+type ConstructorModelo = (Datos -> [Etiqueta] ->Modelo)
+
+nFoldCrossValidationGenerico :: Int -> Datos -> [Etiqueta] -> ConstructorModelo -> Float
+nFoldCrossValidationGenerico n datos etiquetas constructorModelo = mean [ obtenerAccuracy (separarDatos datos etiquetas n fold) | fold <- [1..n] ]
+        where obtenerAccuracy (x_train, x_val, y_train, y_val) = accuracy (map (constructorModelo x_train y_train) x_val) y_val
+
+tryClassifierGenerico :: [Texto] -> [Etiqueta] -> ConstructorModelo -> Float
+tryClassifierGenerico x y constructorModelo = let 
+                                xs = extraerFeatures ([longitudPromedioPalabras, repeticionesPromedio] ++ frecuenciaTokens) x 
+                                in nFoldCrossValidationGenerico 5 xs y constructorModelo
