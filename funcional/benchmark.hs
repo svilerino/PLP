@@ -2,6 +2,7 @@ import System.IO
 import System.Directory
 import Data.List
 import Tp
+import Ejercicio13
 --import Solucion
 import System.Random
 
@@ -35,32 +36,50 @@ crearKnn k medida = (\x y -> knn k x y medida)
 crearKnnPesado :: Int -> Medida -> ConstructorModelo
 crearKnnPesado k medida = (\x y -> knnPesado k x y medida)
 
-crossValidate :: String -> (Int -> Medida -> ConstructorModelo) -> Medida -> Datos -> [Etiqueta] -> ((String, Int, Float), [(Int, Float)])
-crossValidate nombreModelo constructorKnn medida datos etiquetas = let
-                                             resultados = [(k, nFoldCrossValidationGenerico 5 datos etiquetas (constructorKnn k medida)) | k <- [3..21], k `mod` 2 == 1 ]
-                                             (mejorK, mejorScore) = foldr (\(k, score) rec -> if score > (snd rec) then (k, score) else rec) (head resultados) resultados
-                                             in ((nombreModelo, mejorK, mejorScore), resultados)
-                                             
-mejorModelo :: (String, Int, Float) -> (String, Int, Float) -> (String, Int, Float)
-mejorModelo (nombre1, k1, score1) (nombre2, k2, score2) = if score1 > score2 then (nombre1, k1, score1) else (nombre2, k2, score2)
-                                      
-correrConFeatures :: String -> Datos -> [Etiqueta] -> IO (String, (String, Int, Float))
-correrConFeatures nombreFeatures datos etiquetas = do
+mejorModelo :: (Int, Float) -> (Int, Float) -> (Int, Float)
+mejorModelo (k1, score1) (k2, score2) = if score1 > score2 then (k1, score1) else (k2, score2)
+
+correrConModelo :: [Texto] -> [Etiqueta] -> ConstructorExtractores -> (Int -> Medida -> ConstructorModelo) -> Medida -> [(Int, Float)]
+correrConModelo textos etiquetas constructorExtractores metaConstructorModelo medida = let
+        cantVecinos = [ k | k <- [3..21], k `mod` 2 == 1 ]
+        constructoresModelo =[metaConstructorModelo k medida | k <- cantVecinos ]
+        resultados = nFoldCrossValidationGenerico 5 textos etiquetas constructorExtractores constructoresModelo
+        in zip cantVecinos resultados
+
+--correrConExtractores :: String -> [Texto] -> [Etiqueta] -> ConstructorExtractores -> IO (String, (String, Int, Float))
+correrConExtractores nombreFeatures textos etiquetas constructorExtractores = do
     print $ "Features: " ++ nombreFeatures
     print "Knn con Distancia Euclideana"
-    let (knn_euclid_mejor, knn_euclid_res) = crossValidate "Knn_DistEuclideana" (crearKnn) distEuclideana datos etiquetas  
+    let knn_euclid_res = correrConModelo textos etiquetas constructorExtractores (crearKnn) distEuclideana 
+    let knn_euclid_mejor = foldr1 mejorModelo knn_euclid_res
     print $ show knn_euclid_res
+    print $ show knn_euclid_mejor
     print "KnnPesado con Distancia Euclideana"
-    let (knnPesado_euclid_mejor, knnPesado_euclid_res) = crossValidate "KnnPesado_DistEuclideana" (crearKnnPesado) distEuclideana datos etiquetas  
+    let knnPesado_euclid_res = correrConModelo textos etiquetas constructorExtractores (crearKnnPesado) distEuclideana 
+    let knnPesado_euclid_mejor = foldr1 mejorModelo knnPesado_euclid_res
     print $ show knnPesado_euclid_res
+    print $ show knnPesado_euclid_mejor
     print "Knn con Distancia Coseno"
-    let (knn_cosine_mejor, knn_cosine_res) = crossValidate "Knn_DistCoseno" (crearKnn) distCosenoPosta datos etiquetas  
-    print $ show knn_cosine_res
+    let knn_coseno_res = correrConModelo textos etiquetas constructorExtractores (crearKnn) distEuclideana 
+    let knn_coseno_mejor = foldr1 mejorModelo knn_coseno_res
+    print $ show knn_coseno_res
+    print $ show knn_coseno_mejor
     print "KnnPesado con Distancia Coseno"
-    let (knnPesado_cosine_mejor, knnPesado_cosine_res) = crossValidate "KnnPesado_DistCoseno" (crearKnnPesado) distCosenoPosta datos etiquetas  
-    print $ show knnPesado_cosine_res
-    let mejor = foldr1 mejorModelo [knn_euclid_mejor, knnPesado_euclid_mejor, knn_cosine_mejor, knnPesado_cosine_mejor]
+    let knnPesado_coseno_res = correrConModelo textos etiquetas constructorExtractores (crearKnnPesado) distEuclideana 
+    let knnPesado_coseno_mejor = foldr1 mejorModelo knnPesado_coseno_res
+    print $ show knnPesado_coseno_res
+    print $ show knnPesado_coseno_mejor
+    let mejor = foldr1 mejorModelo [knn_euclid_mejor, knnPesado_euclid_mejor, knn_coseno_mejor, knnPesado_coseno_mejor]
     return (nombreFeatures, mejor)
+
+constructorFeatures1 :: ConstructorExtractores
+constructorFeatures1 = (\_ -> [longitudPromedioPalabras, repeticionesPromedio] ++ frecuenciaTokens)
+
+constructorFeatures2 :: ConstructorExtractores
+constructorFeatures2 = (\textos -> tfIdfTokens textos)
+
+constructorFeatures3 :: ConstructorExtractores
+constructorFeatures3 = (\textos -> [longitudPromedioPalabras, repeticionesPromedio] ++ (tfIdfTokens textos))
 
 main = do
     (tags1, contents1) <- readAll "funcional"
@@ -71,20 +90,10 @@ main = do
     let y = (tags1 ++ tags2)
     shuffled <- shuffle (zip x y)
     let (x_shuffled, y_shuffled) = unzip shuffled
-    let features = let
-                    result = extraerFeatures ([longitudPromedioPalabras, repeticionesPromedio] ++ frecuenciaTokens) x_shuffled
-                    in result
-    let features2 = let 
-                    tfIdfExtractores = (tfIdfTokens x_shuffled)
-                    result = map (\texto -> map (\extractor -> extractor texto) tfIdfExtractores) x_shuffled
-                    in result
-    let features3 = let
-                    tfIdfExtractores = (tfIdfTokens x_shuffled)
-                    result = extraerFeatures ([longitudPromedioPalabras, repeticionesPromedio] ++ tfIdfExtractores) x_shuffled
-                    in result
-    resultFeatures <- correrConFeatures "Enunciado" features y_shuffled
-    resultFeatures2 <- correrConFeatures "TF-Idf Tokens" features2 y_shuffled
-    resultFeatures3 <- correrConFeatures "TF-Idf Tokens, Repeticiones y LongitudPromedioPalabras Normalizado" features3 y_shuffled
-    print $ show resultFeatures
+    resultFeatures1 <- correrConExtractores "Enunciado" x_shuffled y_shuffled constructorFeatures1
+    resultFeatures2 <- correrConExtractores "TF-Idf Tokens" x_shuffled y_shuffled constructorFeatures2
+    resultFeatures3 <- correrConExtractores "TF-Idf Tokens, Repeticiones y LongitudPromedioPalabras Normalizado" x_shuffled y_shuffled constructorFeatures3
+    print $ show resultFeatures1
     print $ show resultFeatures2
     print $ show resultFeatures3
+    print "Fin"
