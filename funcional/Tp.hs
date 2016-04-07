@@ -159,44 +159,60 @@ nFoldCrossValidation :: Int -> Datos -> [Etiqueta] -> Float
 nFoldCrossValidation n datos etiquetas = mean [ obtenerAccuracy (separarDatos datos etiquetas n fold) | fold <- [1..n] ]
         where obtenerAccuracy (x_train, x_val, y_train, y_val) = accuracy (map (knn 15 x_train y_train distEuclideana) x_val) y_val
 
--- Hasta aca va el tp. Ahora implementamos un clasificador nuevo
+-- Hasta aca va el tp. Ahora implementamos un clasificador y features nuevos
 
-idf :: Char -> [Set Char] -> Float
-idf token sets = log (genericLength sets / (1.0 + (sum (map (\set -> boolAFloat(Set.member token set)) sets))))
+-- Inverse Document Frecuency: inverso de la cantidad de doucmentos en los que el termino aparece
+idf :: a -> [Set a] -> Float
+idf termino sets = log (genericLength sets / (1.0 + (sum (map (\set -> boolAFloat(Set.member termino set)) sets))))
     where boolAFloat b
                     | b == True = 1.0
                     | otherwise = 0.0
 
-tfIdf :: Char -> [Set Char] -> Extractor                     
-tfIdf token sets = \texto -> let 
-                        frecuenciaToken = apariciones token texto
+-- TF-IDF: Term Frecuency (apariciones del termino en el texto) multiplicado por IDF del termino
+tfIdf :: a -> [Set a] -> Extractor                     
+tfIdf termino sets = \texto -> let 
+                        frecuenciaToken = apariciones termino texto
                         resultado   | frecuenciaToken == 0 = 0
-                                    | otherwise = fromIntegral (frecuenciaToken) * (idf token sets)
+                                    | otherwise = fromIntegral (frecuenciaToken) * (idf termino sets)
                         in resultado
 
+-- Para ser eficientes, de cada texto extraemos un Set con los tokens que aparecen en el mismo
 setAparicionesTokens :: [Texto] -> [Set Char]
 setAparicionesTokens textos = map (\texto -> Set.fromList [token | token <- tokens, token `elem` texto] ) textos 
-                        
+
+-- Conjunto de extractores tfIdf (uno por cada token)
 tfIdfTokens :: [Texto] -> [Extractor]
 tfIdfTokens textos = let sets = setAparicionesTokens textos in [ tfIdf token sets | token <- tokens ]
 
+-- El enunciado esta conceptualmente mal, la funcion distCoseno en realidad implementa la similitud
+-- Coseno, que es lo opuesto de la distancia. Con esta nueva distancia el clasificador deberia andar mejor
+distCosenoPosta :: Medida
+distCosenoPosta p q = 1 - distCoseno p q
+
+-- Dado una lista de elementos con pesos, da una nueva lista con una unica entrada por elemento, y la
+-- suma de todos los pesos de ese elemento en la lista original
 sumarPesos :: (Eq a, Ord a) => [(Float, a)] -> [(Float, a)]
 sumarPesos xs = foldr (\x rec -> if null rec then [x] else chequearYAgregar x rec) [] (sort xs) 
                                 where 
                                     chequearYAgregar x rec = if snd (head rec) == snd x then agregarACabeza x rec else [x] ++ rec
                                     agregarACabeza x rec = [(fst x + fst (head rec), snd x)] ++ tail rec
 
+-- Moda con Peso: En lugar de contar las apariciones, compara por la suma de los pesos de los elementos
 modaEstadisticaPesada :: (Eq a, Ord a) => [(Float, a)] -> a
 modaEstadisticaPesada xs = snd (foldr (\x rec -> if fst x > fst rec then x else rec) (head xs) (sumarPesos xs))
 
 invertirDistancias :: [(Float, a)] -> [(Float, a)]
 invertirDistancias = map (\(peso, etiqueta) -> (1.0 /  peso, etiqueta))
 
+-- Weighted K Nearest Neighbours: Algoritmo similar a KNN, pero a cada uno de los K vecinos le asigna un peso
+-- correspondiente a el inverso de las distancias. De esta forma, los mas cercanos tienen mas voto
 knnPesado :: Int -> Datos -> [Etiqueta] -> Medida -> Modelo
 knnPesado k datos etiquetas medida = \instancia -> modaEstadisticaPesada (invertirDistancias (take k (sort (zip (distanciasAInstancia datos medida instancia) etiquetas))))
 
 type ConstructorModelo = (Datos -> [Etiqueta] ->Modelo)
 
+-- N Fold CrossValidation aplicable genericamente: dada una funcion que "entrena" un modelo tomando un
+-- conjunto de datos y etiquetas y devolviendo el modelo y lo utiliza para hacer el cross validation
 nFoldCrossValidationGenerico :: Int -> Datos -> [Etiqueta] -> ConstructorModelo -> Float
 nFoldCrossValidationGenerico n datos etiquetas constructorModelo = mean [ obtenerAccuracy (separarDatos datos etiquetas n fold) | fold <- [1..n] ]
         where obtenerAccuracy (x_train, x_val, y_train, y_val) = accuracy (map (constructorModelo x_train y_train) x_val) y_val
