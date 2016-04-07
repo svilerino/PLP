@@ -41,7 +41,7 @@ main = do
     let y = (tags1 ++ tags2)
     shuffled <- shuffle (zip x y)
     let (x_shuffled, y_shuffled) = unzip shuffled
-    print $ "Accuracy promedio: " ++ (show $ tryClassifier features y_shuffled)
+    print $ "Accuracy promedio: " ++ (show $ tryClassifier x_shuffled y_shuffled)
     -- print $ tryClassifierUnk x_shuffled y_shuffled contentsUnk
     let length_class_1 = genericLength (filter (\x -> x == (head y)) y)
     let random_acc = length_class_1 / (genericLength y)
