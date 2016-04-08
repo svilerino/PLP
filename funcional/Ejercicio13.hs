@@ -56,11 +56,15 @@ type ConstructorExtractores = ([Texto] -> [Extractor])
 extraerFeaturesSinNorm :: [Extractor] -> [Texto] -> Datos
 extraerFeaturesSinNorm extractores textos = map (\texto -> map (\extractor -> extractor texto) extractores) textos
 
+-- Dada una lista de listas (todas con igual longitud), calcula el promedio columna a columna
 mediaPorColumna :: [[Float]] -> [Float]
 mediaPorColumna xss = [ mean (map (!!(col - 1)) xss) | col <-[1..length (head xss)] ]
 
-aplicarFold :: ([Texto], [Etiqueta], [Texto], [Etiqueta]) -> ConstructorExtractores -> [ConstructorModelo] -> [Float]
-aplicarFold (x_train, x_val, y_train, y_val) constructorExtractores constructoresModelo = let
+-- Calcula el accuracy dado un set de entrenamiento y uno de validacion, para cada modelo construido con la lista
+-- constructoresModelo. Primero construye los extractores, luego computa los features con estos, despues crea los
+-- modelos usando los features de entrenamiento y finalmente realiza el calculo de la accuracy
+aplicarParticion :: ([Texto], [Etiqueta], [Texto], [Etiqueta]) -> ConstructorExtractores -> [ConstructorModelo] -> [Float]
+aplicarParticion (x_train, x_val, y_train, y_val) constructorExtractores constructoresModelo = let
     extractores = constructorExtractores x_train
     features_train = extraerFeaturesSinNorm (extractores) x_train
     features_val = extraerFeaturesSinNorm (extractores) x_val
@@ -71,8 +75,11 @@ separarDatosGenerico :: [a] -> [b] -> Int -> Int -> ([a], [a], [b], [b])
 separarDatosGenerico datos etiquetas n p = (obtenerSalvoParticion n p datos, obtenerParticion n p datos, obtenerSalvoParticion n p etiquetas, obtenerParticion n p etiquetas)
 
 -- N Fold CrossValidation aplicable genericamente a varios modelos: dada una lista de funciones que "entrenan"  modelos tomando un
--- conjunto de datos y etiquetas y devolviendo el modelo y lo utiliza para hacer el cross validation
+-- conjunto de textos y etiquetas y devolviendo el modelo y lo utiliza para hacer el cross validation. Tambien toma una funcion
+-- que dado los textos, devuelve la lista de extractores a usar (TF-IDF necesita el dataset para crear el extractor).
+-- Con todo esto, esta funcion aplica nFoldCrossValidation sobre cada uno de los modelos. Para reaprovechar los features construidos
+-- con los extractores, aplica la misma particion al mismo tiempo a todos los modelos. Luego calcula la media por columna
 nFoldCrossValidationGenerico :: Int -> [Texto] -> [Etiqueta] -> ConstructorExtractores -> [ConstructorModelo] -> [Float]
 nFoldCrossValidationGenerico n textos etiquetas constructorExtractores constructoresModelo = let
-    aplicaciones = [ aplicarFold (separarDatosGenerico textos etiquetas n fold) constructorExtractores constructoresModelo | fold <- [1..n] ]
+    aplicaciones = [ aplicarParticion (separarDatosGenerico textos etiquetas n fold) constructorExtractores constructoresModelo | fold <- [1..n] ]
     in mediaPorColumna aplicaciones
