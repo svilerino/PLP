@@ -99,17 +99,16 @@ main = do
     let y = (tags1 ++ tags2)
     shuffled <- shuffle (zip x y)
     let (x_shuffled, y_shuffled) = unzip shuffled
-    --resultFeatures1 <- correrConExtractores "Enunciado" x_shuffled y_shuffled constructorFeatures1
-    --resultFeatures2 <- correrConExtractores "TF-Idf Tokens" x_shuffled y_shuffled constructorFeatures2
-    --resultFeatures3 <- correrConExtractores "TF-Idf Tokens, Repeticiones y LongitudPromedioPalabras" x_shuffled y_shuffled constructorFeatures3
-    --resultFeatures4 <- correrConExtractores "Enunciado Normalizado" x_shuffled y_shuffled constructorFeatures4
-    --resultFeatures5 <- correrConExtractores "TF-Idf Tokens Normalizado" x_shuffled y_shuffled constructorFeatures5
-    --resultFeatures6 <- correrConExtractores "TF-Idf Tokens, Repeticiones y LongitudPromedioPalabras Normalizados" x_shuffled y_shuffled constructorFeatures6
-    print $ show $ maximum $ nFoldCrossValidationGenerico 5 x_shuffled y_shuffled constructorFeatures6 [ crearKnnPesado 21 distCosenoPosta ]
-    --print $ show resultFeatures1
-    --print $ show resultFeatures2
-    --print $ show resultFeatures3
-    --print $ show resultFeatures4
-    --print $ show resultFeatures5
-    --print $ show resultFeatures6
-    print "Fin"
+    resultFeatures1 <- correrConExtractores "Enunciado" x_shuffled y_shuffled constructorFeatures1
+    resultFeatures2 <- correrConExtractores "TF-Idf Tokens" x_shuffled y_shuffled constructorFeatures2
+    resultFeatures3 <- correrConExtractores "TF-Idf Tokens, Repeticiones y LongitudPromedioPalabras" x_shuffled y_shuffled constructorFeatures3
+    resultFeatures4 <- correrConExtractores "Enunciado Normalizado" x_shuffled y_shuffled constructorFeatures4
+    resultFeatures5 <- correrConExtractores "TF-Idf Tokens Normalizado" x_shuffled y_shuffled constructorFeatures5
+    resultFeatures6 <- correrConExtractores "TF-Idf Tokens, Repeticiones y LongitudPromedioPalabras Normalizados" x_shuffled y_shuffled constructorFeatures6
+
+    print $ show resultFeatures1
+    print $ show resultFeatures2
+    print $ show resultFeatures3
+    print $ show resultFeatures4
+    print $ show resultFeatures5
+    print $ show resultFeatures6
