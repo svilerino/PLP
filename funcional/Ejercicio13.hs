@@ -5,16 +5,21 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.List
 
--- Inverse Document Frecuency: inverso de la cantidad de doucmentos en los que el termino aparece
-idf :: Ord a => a -> [Set a] -> Float
-idf termino sets = log (genericLength sets / (1.0 + (sum (map (\set -> boolAFloat(Set.member termino set)) sets))))
+-- Document Frecuency: cantidad de doucmentos en los que el termino aparece
+df :: Ord a => [Set a] -> a -> Float
+df sets termino = sum (map (\set -> boolAFloat(Set.member termino set)) sets)
+        
+-- Inverse Document Frecuency
+idf :: Ord a => [Set a] ->  a -> Float
+idf sets termino = log (genericLength sets / (1.0 + (df sets termino)))
 
--- TF-IDF: Term Frecuency (apariciones del termino en el texto) multiplicado por IDF del termino
-tfIdf :: Ord a => a -> [Set a] -> ([a] -> Feature)
-tfIdf termino sets = \texto -> let 
-    frecuenciaToken = apariciones termino texto
+-- TF-IDF: Term Frecuency (apariciones del termino en el elemento, ya sea buscando tokens en un texto,
+-- o palabras en arreglos de texto) multiplicado por IDF del termino
+tfIdf :: Ord a => [Set a] -> a -> ([a] -> Feature)
+tfIdf sets termino = \elemento -> let 
+    frecuenciaToken = apariciones termino elemento
     resultado     | frecuenciaToken == 0 = 0
-                        | otherwise = fromIntegral (frecuenciaToken) * (idf termino sets)
+                  | otherwise = fromIntegral (frecuenciaToken) * (idf sets termino)
     in resultado
 
 -- Para ser eficientes, de cada texto extraemos un Set con los tokens que aparecen en el mismo
@@ -23,8 +28,22 @@ setAparicionesTokens textos = map (\texto -> Set.fromList [token | token <- toke
 
 -- Conjunto de extractores tfIdf (uno por cada token)
 tfIdfTokens :: [Texto] -> [Extractor]
-tfIdfTokens textos = let sets = setAparicionesTokens textos in [ tfIdf token sets | token <- tokens ]
+tfIdfTokens textos = let sets = setAparicionesTokens textos in [ tfIdf sets token | token <- tokens ]
 
+-- Version mas eficiente que nub
+unicos :: (Ord a) => [a] -> [a]
+unicos xs = Set.toList (Set.fromList xs)
+
+-- Conjunto de extractores tfIdf (uno por cada palabra en el dataset que aparece mas de 2 veces)
+tfIdfTerminos :: [Texto] -> [Extractor]
+tfIdfTerminos textos = let 
+    spliteados = map (split ' ') textos
+    terminos = unicos (concat spliteados)
+    sets = map (Set.fromList) spliteados 
+    terminos_importantes = filter (\termino -> df sets termino > 2) terminos
+    sets_filtrados = map (\texto_spliteado -> Set.fromList (filter (\termino -> termino `elem` terminos_importantes) texto_spliteado)) spliteados
+    in [ (\texto -> (tfIdf sets_filtrados termino) (split ' ' texto)) | termino <- terminos_importantes ]
+    
 -- El enunciado esta conceptualmente mal, la funcion distCoseno en realidad implementa la similitud
 -- Coseno, que es lo opuesto de la distancia. Con esta nueva distancia el clasificador deberia andar mejor
 distCosenoPosta :: Medida
@@ -53,6 +72,7 @@ knnPesado k datos etiquetas medida = \instancia -> modaEstadisticaPesada (invert
 type ConstructorModelo = (Datos -> [Etiqueta] ->Modelo)
 type ConstructorExtractores = ([Texto] -> [Extractor])
 
+-- No siempre queremos normalizar en nuestros modelos
 extraerFeaturesSinNorm :: [Extractor] -> [Texto] -> Datos
 extraerFeaturesSinNorm extractores textos = map (\texto -> map (\extractor -> extractor texto) extractores) textos
 
@@ -63,14 +83,15 @@ mediaPorColumna xss = [ mean (map (!!(col - 1)) xss) | col <-[1..length (head xs
 -- Calcula el accuracy dado un set de entrenamiento y uno de validacion, para cada modelo construido con la lista
 -- constructoresModelo. Primero construye los extractores, luego computa los features con estos, despues crea los
 -- modelos usando los features de entrenamiento y finalmente realiza el calculo de la accuracy
-aplicarParticion :: ([Texto], [Etiqueta], [Texto], [Etiqueta]) -> ConstructorExtractores -> [ConstructorModelo] -> [Float]
-aplicarParticion (x_train, x_val, y_train, y_val) constructorExtractores constructoresModelo = let
+aplicarParticion :: ([Texto], [Etiqueta], [Texto], [Etiqueta]) -> ConstructorExtractores -> ConstructorModelo -> Float
+aplicarParticion (x_train, x_val, y_train, y_val) constructorExtractores constructorModelo = let
     extractores = constructorExtractores x_train
     features_train = extraerFeaturesSinNorm (extractores) x_train
     features_val = extraerFeaturesSinNorm (extractores) x_val
-    modelos = map (\constructorModelo -> constructorModelo features_train y_train) constructoresModelo
-    in map (\modelo -> accuracy (map modelo features_val) y_val) modelos
+    modelo = constructorModelo features_train y_train
+    in accuracy (map modelo features_val) y_val
 
+-- Version de Separar Datos que sirve tanto para [Texto] como para Datos
 separarDatosGenerico :: [a] -> [b] -> Int -> Int -> ([a], [a], [b], [b])
 separarDatosGenerico datos etiquetas n p = (obtenerSalvoParticion n p datos, obtenerParticion n p datos, obtenerSalvoParticion n p etiquetas, obtenerParticion n p etiquetas)
 
@@ -79,7 +100,7 @@ separarDatosGenerico datos etiquetas n p = (obtenerSalvoParticion n p datos, obt
 -- que dado los textos, devuelve la lista de extractores a usar (TF-IDF necesita el dataset para crear el extractor).
 -- Con todo esto, esta funcion aplica nFoldCrossValidation sobre cada uno de los modelos. Para reaprovechar los features construidos
 -- con los extractores, aplica la misma particion al mismo tiempo a todos los modelos. Luego calcula la media por columna
-nFoldCrossValidationGenerico :: Int -> [Texto] -> [Etiqueta] -> ConstructorExtractores -> [ConstructorModelo] -> [Float]
-nFoldCrossValidationGenerico n textos etiquetas constructorExtractores constructoresModelo = let
-    aplicaciones = [ aplicarParticion (separarDatosGenerico textos etiquetas n fold) constructorExtractores constructoresModelo | fold <- [1..n] ]
-    in mediaPorColumna aplicaciones
+nFoldCrossValidationGenerico :: Int -> [Texto] -> [Etiqueta] -> ConstructorExtractores -> ConstructorModelo -> Float
+nFoldCrossValidationGenerico n textos etiquetas constructorExtractores constructorModelo = let
+    aplicaciones = map (\fold -> aplicarParticion (separarDatosGenerico textos etiquetas n fold) constructorExtractores constructorModelo) [1..n]
+    in mean aplicaciones

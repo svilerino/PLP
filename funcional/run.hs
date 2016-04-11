@@ -2,6 +2,7 @@ import System.IO
 import System.Directory
 import Data.List
 import Tp
+import Ejercicio13
 --import Solucion
 import System.Random
 
@@ -29,7 +30,13 @@ readAll category = do
   setCurrentDirectory "../"
   return $ (tags, contents)
 
---extraerFeatures ([longitudPromedioPalabras, repeticionesPromedio] ++ tfIdfTokens x)
+constructorFeatures1 = (\textos -> let 
+    extractores = (tfIdfTokens textos)
+    in extractores)
+    
+constructorFeatures2 = (\textos -> let 
+    extractores = (tfIdfTokens textos) ++ (tfIdfTerminos textos)
+    in extractores)
   
 main = do
     (tags1, contents1) <- readAll "funcional"
@@ -41,7 +48,10 @@ main = do
     let y = (tags1 ++ tags2)
     shuffled <- shuffle (zip x y)
     let (x_shuffled, y_shuffled) = unzip shuffled
-    print $ "Accuracy promedio: " ++ (show $ tryClassifier x_shuffled y_shuffled)
+    print $ "Accuracy promedio Knn 15 distEuclideana y Features del Enunciado: " ++ (show $ tryClassifier x_shuffled y_shuffled)
+    print $ "Accuracy promedio KnnPesado 11 distCosenoPosta y Features TF-IDF de los tokens: " ++ (show $ nFoldCrossValidationGenerico 5 x_shuffled y_shuffled constructorFeatures1 (\x y -> knnPesado 11 x y distCosenoPosta))
+    print $ "El siguiente modelo puede tardar algunas horas en correr"
+    print $ "Accuracy promedio KnnPesado 11 distCosenoPosta y Features TF-IDF de los tokens y las palabras que aparecen en mas de 2 programas: " ++ (show $ nFoldCrossValidationGenerico 5 x_shuffled y_shuffled constructorFeatures2 (\x y -> knnPesado 11 x y distCosenoPosta))
     -- print $ tryClassifierUnk x_shuffled y_shuffled contentsUnk
     let length_class_1 = genericLength (filter (\x -> x == (head y)) y)
     let random_acc = length_class_1 / (genericLength y)
