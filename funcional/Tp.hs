@@ -41,7 +41,7 @@ Por último, calcula el promedio de todas estas longitudes.
 Ej: "Hola, ¿Cómo te va? -> ["Hola,","¿Cómo","te","va?"] -> [5,5,2,3] -> 3.75
 -}
 longitudPromedioPalabras :: Extractor
-longitudPromedioPalabras texto = mean (map genericLength (split ' ' texto))
+longitudPromedioPalabras texto = if null texto then 0.0 else mean (map genericLength (split ' ' texto))
 
 
 --------------------------------------------------------------------------------
@@ -69,7 +69,7 @@ Ej: "Y dale, dale, dale dale, dale tense"
 	-> 1.75
 -}
 repeticionesPromedio :: Extractor
-repeticionesPromedio texto = mean (map (fromIntegral . fst) (cuentas (split ' ' texto)))
+repeticionesPromedio texto = if null texto then 0.0 else mean (map (fromIntegral . fst) (cuentas (split ' ' texto)))
 
 
 --------------------------------------------------------------------------------
@@ -82,7 +82,9 @@ tokens :: [Char]
 tokens = "_,)(*;-=>/.{}\"&:+#[]<|%!\'@?~^$` abcdefghijklmnopqrstuvwxyz0123456789"
 
 frecuenciaTokens :: [Extractor]
-frecuenciaTokens = [ \texto -> (fromIntegral (apariciones token texto)) / (fromIntegral (length texto)) | token <- tokens]
+frecuenciaTokens = [ \texto -> if null texto
+    then 0.0
+    else (fromIntegral (apariciones token texto)) / (fromIntegral (length texto)) | token <- tokens]
 
 
 --------------------------------------------------------------------------------
