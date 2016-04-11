@@ -58,7 +58,8 @@ testsRepeticionesPromedio = test [
 testsFrecuenciaTokens = test [
             (head frecuenciaTokens) "use_snake_case !" ~?= 0.125,
             all (\f -> f "" == 0.0) frecuenciaTokens ~?= True,
-            all (\f -> f tokens == 1/(genericLength tokens)) frecuenciaTokens ~?= True
+            all (\f -> f tokens == 1/(genericLength tokens)) frecuenciaTokens ~?= True,
+            map (\f -> f "€") frecuenciaTokens ~?= take (length tokens) (repeat 0.0)
             ]
 
 ts = ["b=a", "a = 2; a = 4", "C:/DOS C:/DOS/RUN RUN/DOS/RUN"]
@@ -67,15 +68,27 @@ ts = ["b=a", "a = 2; a = 4", "C:/DOS C:/DOS/RUN RUN/DOS/RUN"]
 --            ]
 
 testsExtraerFeatures = test [
-            extraerFeatures [longitudPromedioPalabras, repeticionesPromedio] ts ~?= [[0.33333334,0.6666667],[0.12962963,1.0],[1.0,0.6666667]]
+            extraerFeatures [longitudPromedioPalabras, repeticionesPromedio] ts ~?= [[0.33333334,0.6666667],[0.12962963,1.0],[1.0,0.6666667]],
+            extraerFeatures [longitudPromedioPalabras, repeticionesPromedio] [] ~?= [],
+            extraerFeatures [longitudPromedioPalabras, repeticionesPromedio] [""] ~?= [[0.0,0.0]],
+            extraerFeatures [repeticionesPromedio, longitudPromedioPalabras] (head ts : [""] ++ tail ts) ~?= [[0.6666667,0.33333334],[0.0,0.0],[1.0,0.12962963],[0.6666667,1.0]]
             ]
 
 testsDistEuclideana = test [
-            distEuclideana [1.0,0.75,0.8125] [0.75,1.0,0.5] ~?= 0.47186464
+            distEuclideana [1.0,0.75,0.8125] [0.75,1.0,0.5] ~?= 0.47186464,
+            distEuclideana [0.0,0.0] [0.0,0.0] ~?= 0.0,
+            distEuclideana [1.0,1.0] [1.0,1.0] ~?= 0.0,
+            distEuclideana [0] [0] ~?= 0,
+            distEuclideana [0] [4] ~?= 4,
+            distEuclideana [0.0,0.0] [1.0,1.0] ~?= sqrt(2),
+            distEuclideana [0.0,0.0] [-1.0,-1.0] ~?= sqrt(2),
+            distEuclideana [0.5,0.5] [-0.5,-0.5] ~?= sqrt(2)
             ]
 
 testsDistCoseno = test [
-            distCoseno [0,3,4] [0,-3,-4]  ~?= -1
+            distCoseno [0,3,4] [0,-3,-4]  ~?= -1,
+            distCoseno [4] [1] ~?= 1.0,
+            distCoseno [1,0] [0,1] ~?= 0
             ]
 
 testsKnn = test [
@@ -86,7 +99,9 @@ xs = [[1,1],[2,2],[3,3],[4,4],[5,5],[6,6],[7,7]] :: Datos
 y = ["1","2","3","4","5","6","7"]
 
 testsSepararDatos = test [
-            separarDatos xs y 3 2 ~?= ([[1.0,1.0],[2.0,2.0],[5.0,5.0],[6.0,6.0]], [[3.0,3.0],[4.0,4.0]], ["1","2","5","6"], ["3","4"])
+            separarDatos xs y 3 2 ~?= ([[1.0,1.0],[2.0,2.0],[5.0,5.0],[6.0,6.0]], [[3.0,3.0],[4.0,4.0]], ["1","2","5","6"], ["3","4"]),
+            separarDatos xs y 1 1 ~?= ([], xs , [], y),
+            separarDatos xs y (length xs) 1 ~?= (tail xs, [head xs], tail y, [head y])
             ]
 
 testsAccuracy = test [
