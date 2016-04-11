@@ -185,16 +185,15 @@ knn k datos etiquetas medida = \instancia -> modaEstadistica (map snd (take k (s
 (la de datos y la de etiquetas) de dos funciones: obtenerSalvoParticion y
 obtenerParticion.
 
-Básicamente lo que hacen es particionar una lista de entrada en particiones de
-tamaño n (de otra entrada) y devolver la partición p (parámentro), en el caso
-de obtenerParticiones, o devolver toda la lista original excepto la partición
-p (obtenerSalvoParticion).
+Básicamente lo que hacen es particionar una lista de entrada en  n particiones
+y devolver la partición p (parámentro), en el caso de obtenerParticion, o 
+devolver toda la lista original excepto la partición p (obtenerSalvoParticion).
 
 obtenerPartición lo que hace es calcular el tamaño de cada partición dada la
 lista original (y su cantidad de elementos) y el tamaño de la partición pasado
 por parámetro, para luego eliminar los elementos de las primeras p-1 particiones
-y luego tomar de las elementos restantes los primeros n elementos (para p la
-partición a obtener y n el tamaño de las particiones).
+y luego tomar de las elementos restantes los primeros longParticion elementos 
+(para p la partición a obtener y longParticion la longitud de una particion).
 
 obtenerSalvoPartición es muy similar a obtenerParticion. Calcula el tamaño de la
 partición en base al tamaño de la lista y la cantidad de particiones, y luego
@@ -203,6 +202,12 @@ Por último, simplemente tomamos los elementos de todas las particiones previas
 a la p (la que va a ser filtrada) y se concatena con todos los elementos post
 partición p.
 -}
+obtenerParticion :: Int -> Int -> [a] -> [a]
+obtenerParticion n p xs = let
+    longParticion = (length xs) `div` n
+    longPrimerParte = (p - 1) * longParticion
+    in take longParticion (drop longPrimerParte xs)
+
 obtenerSalvoParticion :: Int -> Int -> [a] -> [a]
 obtenerSalvoParticion n p xs = let
     longParticion = (length xs) `div` n
@@ -210,12 +215,6 @@ obtenerSalvoParticion n p xs = let
     longUltimaParte = (n - p) * longParticion
     longHastaUltimaParte = longPrimerParte + longParticion
     in take longPrimerParte xs ++ take longUltimaParte (drop longHastaUltimaParte xs) --se podría hacer con reverse reverse y evitar un calculo, aunque reverse no es muy performante... también se podría con un dropWhile
-
-obtenerParticion :: Int -> Int -> [a] -> [a]
-obtenerParticion n p xs = let
-    longParticion = (length xs) `div` n
-    longPrimerParte = (p - 1) * longParticion
-    in take longParticion (drop longPrimerParte xs)
 
 separarDatos :: Datos -> [Etiqueta] -> Int -> Int -> (Datos, Datos, [Etiqueta], [Etiqueta])
 separarDatos datos etiquetas n p = (obtenerSalvoParticion n p datos, obtenerParticion n p datos, obtenerSalvoParticion n p etiquetas, obtenerParticion n p etiquetas)
