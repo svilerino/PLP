@@ -39,7 +39,7 @@ split x xs = filter (not . null) (foldr (\y rec -> if y == x then []:rec else (y
 --------------------------------------------------------------------------------
 {- longitudPromedioPalabras: No requiere explicación
 
-Ej: longitudPromedioPalabras "Hola, ¿Cómo te va?
+Ej: longitudPromedioPalabras "Hola, ¿Cómo te va?"
 	-> ["Hola,","¿Cómo","te","va?"]
 	-> [5,5,2,3]
 	-> 3.75
@@ -52,6 +52,9 @@ longitudPromedioPalabras texto = case texto of
 
 --------------------------------------------------------------------------------
 {- cuentas: No Requiere explicación
+Ej: cuentas "Supercalifragilisticoespialidoso" 
+	-> [(1,'S'),(1,'u'),(2,'p'),(2,'e'),(2,'r'),(2,'c'),(3,'a'),(3,'l'),
+	(6,'i'),(1,'f'),(1,'g'),(3,'s'),(1,'t'),(3,'o'),(1,'d')]
 -}
 apariciones :: Eq a => a -> [a] -> Int
 apariciones x xs = length $ filter (x==) xs
@@ -63,7 +66,7 @@ cuentas xs = [(apariciones x xs, x) | x <- nub xs]
 --------------------------------------------------------------------------------
 {- repeticionesPromedio: No requiere explicación.
 
-Ej: "Y dale, dale, dale dale, dale tense" 
+Ej: repeticionesPromedio "Y dale, dale, dale dale, dale tense" 
 	-> [[Y],[dale,],[dale,],[dale],[dale,],[dale],[tense]]
 	-> [(1,"Y"),(3,"dale,"),(2,"dale"),(1,"tense")]
 	-> [1.0,3.0,2.0,1.0]
@@ -86,6 +89,9 @@ frecuenciasTokens es nulo, entonces las funciones devuelvan 0 (tiene sentido
 pensar que la frecuencia de cualquier token en un string vacio sea 0, que sería
 idéntica a pasarle un texto donde dicho token no aparezca).
 
+Ej: (head frecuenciaTokens) "_miVariable = _miEntero * 2"
+	-> 2.0 /  27.0
+	-> 0.0740740..
 -}
 tokens :: [Char]
 tokens = "_,)(*;-=>/.{}\"&:+#[]<|%!\'@?~^$` abcdefghijklmnopqrstuvwxyz0123456789"
@@ -106,7 +112,8 @@ absoluto.
 La decisión de usar "in" en lugar de "where" se consultó por mail, y se decidió
 usar "in" por cuestiones de performance de la implementación de ghc.
 
-No se muestra un ejemplo, ya que el resultado es un extractor.
+No se muestra un ejemplo, ya que el resultado es un extractor que depende de los
+textos de entrada, y el ejemplo se volveria demasiado complejo.
 -}
 normalizarExtractor :: [Texto] -> Extractor -> Extractor
 normalizarExtractor textos extractor = let
@@ -118,8 +125,7 @@ normalizarExtractor textos extractor = let
 --------------------------------------------------------------------------------
 {- extraerFeatures: No requiere explicación.
 
-No se muestra ejemplo, ya que los pasos intermedios representarian funciones,
-las cuales no sabríamos como explicitar de forma escrita.
+No se muestra ejemplo, por el mismo motivo que el punto anterior
 -}
 extraerFeatures :: [Extractor] -> [Texto] -> Datos
 extraerFeatures extractores textos = let
@@ -143,7 +149,7 @@ distEuclideana p q = sqrt (sum (map (**2) (zipWith (-) p q)))
 --------------------------------------------------------------------------------
 {-distCoseno: No requiere explicación.
 
-Ej: distCoseno [4,4] [2,2] --Los ejemplos no muestran el orden de evaluación de Haskell
+Ej: distCoseno [4,4] [2,2] --Este ejemplo no muestran el orden de evaluación de Haskell
 	-> sum [8,8] / (sqrt(sum [8,8]) * sqrt(sum [4,4]))
 	-> 16 / (sqrt(16) * sqrt(8))
 	-> 16 / (4*2.82)
@@ -162,24 +168,11 @@ distCoseno p q = (prodVectorial p q) / (normaVectorial p * normaVectorial q)
 
 --------------------------------------------------------------------------------
 {- knn: Consideramos que la implementación de esta función es bastante legible
-y no requiere de demasiados comentarios que lo expliquen. De lo que por ahí
-requiere alguna aclaración es el uso del "if" en la función modaEstadística
-y el uso de sort en la definición misma de knn.
+y no requiere de demasiados comentarios que lo expliquen.
 
-Sobre lo primero, surge de considerar el caso en que el conjunto de etiquetas
-sea vacío (esto puede ocurrir si se invoca a knn sin Datos ni Etiquetas -las
-que les pasa nFoldCrossValidation como datos de entrenamiento-, aunque no tiene
-mucho sentido tratar de usar este "programa" así). Entonces, consideramos
-lógico que knn devolviese siempre una etiqueta default (en este caso, "i")
-si no llegase a ser invocado con datos. Se podría haber usado una devolución
-aleatoria de entre las etiquetas posibles como resultado (sería etiquetar de
-manera random), pero lo desestimamos ya que al no ser deterministico no se
-podría "testear".
-
-Sobre lo segundo, la única aclaración es que sort ordena de menor a mayor,
-y en caso de ordenar tuplas, las ordena primero según su primer componente,
-y en caso de empate desempata según el orden de la componente siguiente
-(de menor a mayor también).
+La única aclaración es que sort ordena de menor a mayor, y en caso de ordenar
+tuplas, las ordena primero según su primer componente, y en caso de empate 
+desempata según el orden de la componente siguiente (de menor a mayor también).
 
 Ej: (knn 2 [[1,10],[1,5],[5,1]] [f,i,i] distEuclideana) [1,1]
     -> [9.0,4.0,4.0]
@@ -193,7 +186,7 @@ distanciasAInstancia :: Datos -> Medida -> Instancia -> [Float]
 distanciasAInstancia datos medida instancia = map (medida instancia) datos
 
 modaEstadistica :: [Etiqueta] -> Etiqueta
-modaEstadistica xs = if null xs then "i" else snd (foldr (\x rec -> if fst x > fst rec then x else rec) (0, head xs) (cuentas xs))
+modaEstadistica xs = snd (foldr (\x rec -> if fst x > fst rec then x else rec) (0, head xs) (cuentas xs))
 
 knn :: Int -> Datos -> [Etiqueta] -> Medida -> Modelo
 knn k datos etiquetas medida = \instancia -> modaEstadistica (map snd (take k (sort (zip (distanciasAInstancia datos medida instancia) etiquetas))))
@@ -214,10 +207,7 @@ obtenerSalvoParticion n p xs = let
     longPrimerParte = (p - 1) * longParticion
     longUltimaParte = (n - p) * longParticion
     longHastaUltimaParte = longPrimerParte + longParticion
-    in take longPrimerParte xs ++ take longUltimaParte (drop longHastaUltimaParte xs) {-se podría hacer con reverse reverse 
-											y evitar un calculo, aunque reverse 
-											no funciona rápido, especialmente con
-											listas largas-}
+    in take longPrimerParte xs ++ take longUltimaParte (drop longHastaUltimaParte xs)
 
 separarDatos :: Datos -> [Etiqueta] -> Int -> Int -> (Datos, Datos, [Etiqueta], [Etiqueta])
 separarDatos datos etiquetas n p = (obtenerSalvoParticion n p datos, obtenerParticion n p datos, obtenerSalvoParticion n p etiquetas, obtenerParticion n p etiquetas)
@@ -228,8 +218,8 @@ separarDatos datos etiquetas n p = (obtenerSalvoParticion n p datos, obtenerPart
 
 Ej: accuracy ["i","f","f","i","i","f"] ["i","i","i","f","f","f"]
 	-> [True,False,False,False,False,True]
-	-> [1,0,0,0,0,1]
-	-> 2 / 6
+	-> [1.0,0.0,0.0,0.0,0.0,1.0]
+	-> 2.0 / 6.0
 	-> 0.333333
 -}
 boolAFloat :: Bool -> Float
