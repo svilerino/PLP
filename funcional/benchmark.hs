@@ -1,9 +1,9 @@
 import System.IO
+import Control.Monad
 import System.Directory
 import Data.List
 import Tp
 import Ejercicio13
---import Solucion
 import System.Random
 
 shuffle :: [a] -> IO [a]
@@ -30,65 +30,14 @@ readAll category = do
   setCurrentDirectory "../"
   return $ (tags, contents)
 
-crearKnn :: Int -> Medida -> ConstructorModelo
-crearKnn k medida = (\x y -> knn k x y medida)
-
-crearKnnPesado :: Int -> Medida -> ConstructorModelo
-crearKnnPesado k medida = (\x y -> knnPesado k x y medida)
-
-mejorModelo :: (Int, Float) -> (Int, Float) -> (Int, Float)
-mejorModelo (k1, score1) (k2, score2) = if score1 > score2 then (k1, score1) else (k2, score2)
-
-correrConModelo :: [Texto] -> [Etiqueta] -> ConstructorExtractores -> (Int -> Medida -> ConstructorModelo) -> Medida -> [(Int, Float)]
-correrConModelo textos etiquetas constructorExtractores metaConstructorModelo medida = let
-        cantVecinos = [ k | k <- [3..21], k `mod` 2 == 1 ]
-        constructoresModelo = [metaConstructorModelo k medida | k <- cantVecinos ]
-        resultados = nFoldCrossValidationGenerico 5 textos etiquetas constructorExtractores constructoresModelo
-        in zip cantVecinos resultados
-
-correrConExtractores :: String -> [Texto] -> [Etiqueta] -> ConstructorExtractores -> IO (String, (String, (Int, Float)))
-correrConExtractores nombreFeatures textos etiquetas constructorExtractores = do
-    print $ "Features: " ++ nombreFeatures
-    print "Knn con Distancia Euclideana"
-    let knn_euclid_res = correrConModelo textos etiquetas constructorExtractores (crearKnn) distEuclideana 
-    let knn_euclid_mejor = foldr1 mejorModelo knn_euclid_res
-    print $ show knn_euclid_res
-    print $ show knn_euclid_mejor
-    print "KnnPesado con Distancia Euclideana"
-    let knnPesado_euclid_res = correrConModelo textos etiquetas constructorExtractores (crearKnnPesado) distEuclideana 
-    let knnPesado_euclid_mejor = foldr1 mejorModelo knnPesado_euclid_res
-    print $ show knnPesado_euclid_res
-    print $ show knnPesado_euclid_mejor
-    print "Knn con Distancia Coseno"
-    let knn_coseno_res = correrConModelo textos etiquetas constructorExtractores (crearKnn) distCosenoPosta 
-    let knn_coseno_mejor = foldr1 mejorModelo knn_coseno_res
-    print $ show knn_coseno_res
-    print $ show knn_coseno_mejor
-    print "KnnPesado con Distancia Coseno"
-    let knnPesado_coseno_res = correrConModelo textos etiquetas constructorExtractores (crearKnnPesado) distCosenoPosta 
-    let knnPesado_coseno_mejor = foldr1 mejorModelo knnPesado_coseno_res
-    print $ show knnPesado_coseno_res
-    print $ show knnPesado_coseno_mejor
-    let nombresModelos = ["Knn_DistEuclideana", "KnnPesado_DistEuclideana", "Knn_DistCoseno", "KnnPesado_DistCoseno"]
-    let mejoresModelos = [knn_euclid_mejor, knnPesado_euclid_mejor, knn_coseno_mejor, knnPesado_coseno_mejor]
-    let mejor = foldr1 (\modelo mejor -> if snd (snd modelo) > snd (snd mejor) then modelo else mejor) (zip nombresModelos mejoresModelos)
-    return (nombreFeatures, mejor)
-
-constructorFeatures1 = (\_ -> [longitudPromedioPalabras, repeticionesPromedio] ++ frecuenciaTokens)
-constructorFeatures2 = (\textos -> tfIdfTokens textos)
-constructorFeatures3 = (\textos -> [longitudPromedioPalabras, repeticionesPromedio] ++ (tfIdfTokens textos))
-constructorFeatures4 = (\textos -> let 
-    extractores = [longitudPromedioPalabras, repeticionesPromedio] ++ frecuenciaTokens
-    normalizados = map (normalizarExtractor textos) extractores
-    in normalizados)
-constructorFeatures5 = (\textos -> let 
-    extractores = tfIdfTokens textos
-    normalizados = map (normalizarExtractor textos) extractores
-    in normalizados)
-constructorFeatures6 = (\textos -> let 
-    extractores = [longitudPromedioPalabras, repeticionesPromedio] ++ (tfIdfTokens textos)
-    normalizados = map (normalizarExtractor textos) extractores
-    in normalizados)
+constructorFeatures cant = (\textos -> let 
+    extractores = (tfIdfTokens textos) ++ (tfIdfTerminos cant textos)
+    in extractores)
+    
+evaluarModelo vecinos cantTerminos textos etiquetas = do
+    let res = nFoldCrossValidationGenerico 5 textos etiquetas (constructorFeatures cantTerminos) (\x y -> knnPesado vecinos x y distCosenoPosta)
+    print $ "Accuracy promedio KnnPesado " ++ (show vecinos) ++ " distCosenoPosta y Features TF-IDF de los tokens y las palabras que aparecen en mas de " ++ (show cantTerminos) ++ " programas: " ++ (show res)
+    return res
 
 main = do
     (tags1, contents1) <- readAll "funcional"
@@ -99,16 +48,7 @@ main = do
     let y = (tags1 ++ tags2)
     shuffled <- shuffle (zip x y)
     let (x_shuffled, y_shuffled) = unzip shuffled
-    resultFeatures1 <- correrConExtractores "Enunciado" x_shuffled y_shuffled constructorFeatures1
-    resultFeatures2 <- correrConExtractores "TF-Idf Tokens" x_shuffled y_shuffled constructorFeatures2
-    resultFeatures3 <- correrConExtractores "TF-Idf Tokens, Repeticiones y LongitudPromedioPalabras" x_shuffled y_shuffled constructorFeatures3
-    resultFeatures4 <- correrConExtractores "Enunciado Normalizado" x_shuffled y_shuffled constructorFeatures4
-    resultFeatures5 <- correrConExtractores "TF-Idf Tokens Normalizado" x_shuffled y_shuffled constructorFeatures5
-    resultFeatures6 <- correrConExtractores "TF-Idf Tokens, Repeticiones y LongitudPromedioPalabras Normalizados" x_shuffled y_shuffled constructorFeatures6
-
-    print $ show resultFeatures1
-    print $ show resultFeatures2
-    print $ show resultFeatures3
-    print $ show resultFeatures4
-    print $ show resultFeatures5
-    print $ show resultFeatures6
+    forM_ [500, 250, 100, 50, 25, 10, 5, 2] (\terminos -> do
+        forM_ [3, 5, 7, 9, 11, 13, 15, 17, 19, 21] (\vecinos -> do
+            evaluarModelo vecinos terminos x_shuffled y_shuffled))
+    
