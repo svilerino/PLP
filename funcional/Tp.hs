@@ -175,8 +175,8 @@ Ej: (knn 2 [[1,10],[1,5],[5,1]] [f,i,i] distEuclideana) [1,1]
 distanciasAInstancia :: Datos -> Medida -> Instancia -> [Float]
 distanciasAInstancia datos medida instancia = map (medida instancia) datos
 
-modaEstadistica :: Eq a => [a] -> a
-modaEstadistica xs = snd (foldr (\x rec -> if fst x > fst rec then x else rec) (0, head xs) (cuentas xs))
+modaEstadistica :: [Etiqueta] -> Etiqueta
+modaEstadistica xs = if null xs then "i" else snd (foldr (\x rec -> if fst x > fst rec then x else rec) (0, head xs) (cuentas xs))
 
 knn :: Int -> Datos -> [Etiqueta] -> Medida -> Modelo
 knn k datos etiquetas medida = \instancia -> modaEstadistica (map snd (take k (sort (zip (distanciasAInstancia datos medida instancia) etiquetas))))
@@ -226,8 +226,9 @@ separarDatos datos etiquetas n p = (obtenerSalvoParticion n p datos, obtenerPart
 {- accuracy: Simplemente tomamos ambas listas, y generamos una lista de boolean
 resultado de comparar elemento a elemento (en la misma posicón) las 2 listas
 de entrada. Luego convertimos todos los valores de esta lista True a 1 y los
-False a 0. Sumamos y dividimos por la longitud de las listas (que debería ser
-la misma).
+False a 0. Sumamos, obteniendo la cantidad de aciertos en las predicciones.
+Luego y dividimos por la longitud de las listas, es decir, la cantidad de
+predicciones, los cual nos termina dando un porcentaje de acierto en lo predicho.
 -}
 boolAFloat :: Bool -> Float
 boolAFloat b = case b of
