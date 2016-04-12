@@ -128,7 +128,6 @@ testsAccuracy = test [
             ]
 
 testsNFoldCrossValidation = test [
-            nFoldCrossValidation 1 [[0],[5],[8],[10]] ["i","i","i","i"] ~?= 1, --Como hay una sola particion, no queda particion de entrenamiento, y se cae en el valor default
             nFoldCrossValidation 4 [[0],[5],[8],[10]] ["i","i","f","f"] ~?= 0, --Debe fallar porque se toman 15 vecinos
             nFoldCrossValidation 2 [[x] | x<-[1..20]] (take 10 (repeat "i") ++ take 10 (repeat "f")) ~?= 0, --Como son 2 particiones, y las etiquetas estan "particionadas" de igual manera, una particion nunca servirá para la otra
             nFoldCrossValidation 20 [[x] | x<-[1..20]] (foldr (\_ rec -> "i":"f":rec) [] (take 10 (repeat 1))) ~?= 0, --Como los vecinos son 15, tomé tantas particiones como datos hay y las etiquetas estan intercaladas, siempre sucedera que los vecinos estarán intercalados, y con impares vecinos tendre siempre un elemento más con la etiqueta errónea.
