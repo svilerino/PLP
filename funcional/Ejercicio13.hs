@@ -6,10 +6,12 @@ import qualified Data.Set as Set
 import Data.List
 
 -- Document Frecuency: cantidad de doucmentos en los que el termino aparece
+-- Se espera que cada set contenga los terminos que aparecen en el texto correspondiente
 df :: Ord a => [Set a] -> a -> Float
 df sets termino = sum (map (\set -> boolAFloat(Set.member termino set)) sets)
         
--- Inverse Document Frecuency
+-- Inverse Document Frecuency: inverso de la document frecuency. Se le suma 1 al denominador para
+-- evitar dividir por cero
 idf :: Ord a => [Set a] ->  a -> Float
 idf sets termino = log (genericLength sets / (1.0 + (df sets termino)))
 
@@ -30,17 +32,20 @@ setAparicionesTokens textos = map (\texto -> Set.fromList [token | token <- toke
 tfIdfTokens :: [Texto] -> [Extractor]
 tfIdfTokens textos = let sets = setAparicionesTokens textos in [ tfIdf sets token | token <- tokens ]
 
--- Version mas eficiente que nub
+-- Version mas eficiente que nub, usando Sets
 unicos :: (Ord a) => [a] -> [a]
 unicos xs = Set.toList (Set.fromList xs)
 
--- Conjunto de extractores tfIdf (uno por cada palabra en el dataset que aparece mas de 2 veces)
-tfIdfTerminos :: [Texto] -> [Extractor]
-tfIdfTerminos textos = let 
+-- Conjunto de extractores tfIdf (uno por cada palabra en el dataset que aparece mas de apariciones_minimas veces)
+-- terminos representa cada termino que aparece en cualquier texto del conjunto de textos. Terminos importantes 
+-- representa a los que aparecen en mas de apariciones_minimas textos. Finalmente, sets_filtrados son los sets
+-- que contienen unicamente a los terminos importantes
+tfIdfTerminos :: Float -> [Texto] -> [Extractor]
+tfIdfTerminos apariciones_minimas textos = let 
     spliteados = map (split ' ') textos
     terminos = unicos (concat spliteados)
     sets = map (Set.fromList) spliteados 
-    terminos_importantes = filter (\termino -> df sets termino > 2) terminos
+    terminos_importantes = filter (\termino -> df sets termino > apariciones_minimas) terminos
     sets_filtrados = map (\texto_spliteado -> Set.fromList (filter (\termino -> termino `elem` terminos_importantes) texto_spliteado)) spliteados
     in [ (\texto -> (tfIdf sets_filtrados termino) (split ' ' texto)) | termino <- terminos_importantes ]
     
@@ -76,13 +81,10 @@ type ConstructorExtractores = ([Texto] -> [Extractor])
 extraerFeaturesSinNorm :: [Extractor] -> [Texto] -> Datos
 extraerFeaturesSinNorm extractores textos = map (\texto -> map (\extractor -> extractor texto) extractores) textos
 
--- Dada una lista de listas (todas con igual longitud), calcula el promedio columna a columna
-mediaPorColumna :: [[Float]] -> [Float]
-mediaPorColumna xss = [ mean (map (!!(col - 1)) xss) | col <-[1..length (head xss)] ]
 
--- Calcula el accuracy dado un set de entrenamiento y uno de validacion, para cada modelo construido con la lista
--- constructoresModelo. Primero construye los extractores, luego computa los features con estos, despues crea los
--- modelos usando los features de entrenamiento y finalmente realiza el calculo de la accuracy
+-- Calcula el accuracy dado un set de entrenamiento y uno de validacion, para el modelo construido con constructorModelo.
+-- Primero construye los extractores, luego computa los features con estos, despues crea el modelo usando solo los features
+-- de entrenamiento  y finalmente realiza el calculo de la accuracy
 aplicarParticion :: ([Texto], [Etiqueta], [Texto], [Etiqueta]) -> ConstructorExtractores -> ConstructorModelo -> Float
 aplicarParticion (x_train, x_val, y_train, y_val) constructorExtractores constructorModelo = let
     extractores = constructorExtractores x_train
@@ -91,15 +93,15 @@ aplicarParticion (x_train, x_val, y_train, y_val) constructorExtractores constru
     modelo = constructorModelo features_train y_train
     in accuracy (map modelo features_val) y_val
 
--- Version de Separar Datos que sirve tanto para [Texto] como para Datos
+-- Version de Separar Datos que sirve tanto para [Texto] como para Datos, porque como nuestros extractores necesitan los textos
+-- para ser construidos, necesitamos generar los folds sobre los textos
 separarDatosGenerico :: [a] -> [b] -> Int -> Int -> ([a], [a], [b], [b])
 separarDatosGenerico datos etiquetas n p = (obtenerSalvoParticion n p datos, obtenerParticion n p datos, obtenerSalvoParticion n p etiquetas, obtenerParticion n p etiquetas)
 
--- N Fold CrossValidation aplicable genericamente a varios modelos: dada una lista de funciones que "entrenan"  modelos tomando un
--- conjunto de textos y etiquetas y devolviendo el modelo y lo utiliza para hacer el cross validation. Tambien toma una funcion
+-- N Fold CrossValidation aplicable genericamente: dada una funcion que "entrena" un modelo tomando un conjunto de textos y etiquetas
+-- y devolviendo el modelo, utiliza el modelo creado para hacer el cross validation. Tambien toma una funcion
 -- que dado los textos, devuelve la lista de extractores a usar (TF-IDF necesita el dataset para crear el extractor).
--- Con todo esto, esta funcion aplica nFoldCrossValidation sobre cada uno de los modelos. Para reaprovechar los features construidos
--- con los extractores, aplica la misma particion al mismo tiempo a todos los modelos. Luego calcula la media por columna
+-- Con todo esto, esta funcion aplica nFoldCrossValidation sobre el modelo.
 nFoldCrossValidationGenerico :: Int -> [Texto] -> [Etiqueta] -> ConstructorExtractores -> ConstructorModelo -> Float
 nFoldCrossValidationGenerico n textos etiquetas constructorExtractores constructorModelo = let
     aplicaciones = map (\fold -> aplicarParticion (separarDatosGenerico textos etiquetas n fold) constructorExtractores constructorModelo) [1..n]
