@@ -103,7 +103,6 @@ testsDistCoseno = test [
 
 testsKnn = test [
             (knn 2 [[0,1],[0,2],[2,1],[1,1],[2,3]] ["i","i","f","f","i"] distEuclideana) [1,1] ~?= "f",
-            (knn 1 [] [] distEuclideana) [10] ~?= "i", --Caso Borde (valor default si no hay datos de entrenamiento)
             (knn 1 [[0]] ["f"] distEuclideana) [10] ~?= "f", --Caso Borde
             (knn 1 [[0],[0]] ["i","f"] distEuclideana) [0] ~?= "f", --Caso Borde (Debe ser "f" pues el sort termina ordenando alfabeticamente las etiquetas en caso de empate en la distancia)
             (knn 1 [[0],[2],[5],[10]] ["i","f","i","f"] distEuclideana) [-100] ~?= "i", --Test de cantidad de Vecinos
