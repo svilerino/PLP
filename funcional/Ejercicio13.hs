@@ -66,13 +66,13 @@ sumarPesos xs = foldr (\x rec -> if null rec then [x] else chequearYAgregar x re
 modaEstadisticaPesada :: (Eq a, Ord a) => [(Float, a)] -> a
 modaEstadisticaPesada xs = snd (foldr (\x rec -> if fst x > fst rec then x else rec) (head xs) (sumarPesos xs))
 
-invertirDistancias :: [(Float, a)] -> [(Float, a)]
-invertirDistancias = map (\(peso, etiqueta) -> (1.0 /  peso, etiqueta))
+invertirYPotenciarDistancias :: [(Float, a)] -> [(Float, a)]
+invertirYPotenciarDistancias = map (\(dist, etiqueta) -> (1.0 /  (dist * dist), etiqueta))
 
 -- Weighted K Nearest Neighbours: Algoritmo similar a KNN, pero a cada uno de los K vecinos le asigna un peso
 -- correspondiente a el inverso de las distancias. De esta forma, los mas cercanos tienen mas voto
 knnPesado :: Int -> Datos -> [Etiqueta] -> Medida -> Modelo
-knnPesado k datos etiquetas medida = \instancia -> modaEstadisticaPesada (invertirDistancias (take k (sort (zip (distanciasAInstancia datos medida instancia) etiquetas))))
+knnPesado k datos etiquetas medida = \instancia -> modaEstadisticaPesada (invertirYPotenciarDistancias (take k (sort (zip (distanciasAInstancia datos medida instancia) etiquetas))))
 
 type ConstructorModelo = (Datos -> [Etiqueta] ->Modelo)
 type ConstructorExtractores = ([Texto] -> [Extractor])
