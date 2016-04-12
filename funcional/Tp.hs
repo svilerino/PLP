@@ -113,15 +113,13 @@ extraerFeatures extractores textos = let
 
 
 --------------------------------------------------------------------------------
-{- distEuclideana: Trivial (muy). No creemos que requiera aclaraciones.
--}
+--distEuclideana: Trivial (muy). No creemos que requiera aclaraciones.
 distEuclideana :: Medida
 distEuclideana p q = sqrt (sum (map (**2) (zipWith (-) p q)))
 
 
 --------------------------------------------------------------------------------
-{- distCoseno: Idem distEuclideana
--}
+--distCoseno: Idem distEuclideana
 prodVectorial :: [Float] -> [Float] -> Float
 prodVectorial p q = sum (zipWith (*) p q)
 
