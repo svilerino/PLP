@@ -55,3 +55,20 @@ juntar_con([X | Xs], J, R) :- append(X, [J | Rec], R), juntar_con(Xs, J, Rec), l
 % la funcion anterior) con el átomo espacio.
 palabras([], []).
 palabras(S, P) :- juntar_con(P, espacio, S), not((member(Palabra, P), member(espacio, Palabra))).
+
+% asignar_var(+A, MI, MF)
+% TODO: analisis de reversibilidad, comentario explicando porque anda
+asignar_var(A, MI, MI):- nonvar(A), member((A, _), MI).
+asignar_var(A, MI, [(A, _) | MI]):- nonvar(A), not(member((A, _), MI)).
+
+% palabras_con_variables(P, V)
+
+% quitar(E, L, R)
+
+% cant_distintos(L, S)
+
+% descifrar(S, M)
+
+% descifrar_sin_espacios(S, M)
+
+% mensajes_mas_parejos(S, M)
