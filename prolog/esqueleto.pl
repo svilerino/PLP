@@ -26,3 +26,10 @@ ej(1, [rombo, cuadrado, espacio, perro, cuadrado, sol, cuadrado]).
 ej(2, [rombo, cuadrado, espacio, perro, triangulo, sol, cuadrado]).
 
 ej(3, [rombo, cuadrado, perro, cuadrado, sol, luna, triangulo, estrella, arbol, gato]).
+
+% diccionario_lista(?Y)
+% Si Y no esta instanciado, Y se va a instanciar en las listas de codigos ASCII
+% correspondiente a cada palabra presente en el diccionario. Si esta instanciado,
+% el resultado del predicado es true si el string que representa pertenece al 
+% diccionario actual.
+diccionario_lista(Y) :- diccionario(X), string_codes(X, Y).
