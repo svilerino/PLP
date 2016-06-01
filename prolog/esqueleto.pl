@@ -35,14 +35,23 @@ ej(3, [rombo, cuadrado, perro, cuadrado, sol, luna, triangulo, estrella, arbol, 
 % diccionario actual.
 diccionario_lista(Y) :- diccionario(X), string_codes(X, Y).
 
-% juntar_con(+L, ?J, ?R)
-% L debe estar instanciado siempre, ya que sino se cuelga. Si J esta instanciado y R no,
-% R se va a instanciar con la union de L intercalado con J. Si R esta instanciado y J no,
-% J se instancia con el unico elemento posible (si existe) que haga que R sea el resultado,
-% de intercalar este elemento entre los elementos de L. Si ni J ni R estan instanciados,
-% J queda sin instanciar, y R se instancia con la lista intercalada de L, teniendo como
-% elemento de intercalacion la variable que se haya elegido como J.
+% juntar_con(?L, ?J, ?R)
+% Cuando L esta instanciada y R no, se instancia R con la lista que contiene a cada
+% elemento de cada lista de L, intercalandolas con J. En este caso, si J esta instanciada,
+% el valor de la misma es el que sera intercalado, y si no lo esta, se intercalara con la 
+% variable.
+% Cuando R esta instanciada y L no, se instancia L con cada posible lista que haga que L
+% intercalado con J sea igual a R. Igual que en el caso anterior, si J esta instanciada se
+% tomara su valor, y si no, cada posible valor perteneciente a R.
+% Si todo esta instanciado, el predicado verifica que intercalar L con J sea igual a R.
 juntar_con([], _, []).
 juntar_con([X], _, X).
-juntar_con([X | Xs], J, R) :- length(Xs, Len), Len > 0, append(X, [J], Left), juntar_con(Xs, J, Right), append(Left, Right, R).
+juntar_con([X | Xs], J, R) :- append(X, [J | Rec], R), juntar_con(Xs, J, Rec), length(Rec, LRec), LRec > 0.
 
+% palabras(?S, ?P)
+% Ya sea S o P deben estar instanciados, porque sino se cuelga.
+% Cuando S esta instanciado y P no, se instancia P con el resultado de separar S por el átomo espacio.
+% Cuando P esta instanciado y S no, se instancia S con el resultado de juntar P (en el sentido de
+% la funcion anterior) con el átomo espacio.
+palabras([], []).
+palabras(S, P) :- juntar_con(P, espacio, S), not((member(Palabra, P), member(espacio, Palabra))).
