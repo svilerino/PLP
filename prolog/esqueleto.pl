@@ -62,6 +62,24 @@ asignar_var(A, MI, MI):- nonvar(A), member((A, _), MI).
 asignar_var(A, MI, [(A, _) | MI]):- nonvar(A), not(member((A, _), MI)).
 
 % palabras_con_variables(P, V)
+palabras_con_variables(P,V):- mapear(P,MF), aplicar_mapeo_palabras(P,MF,V).
+
+mapear(P,MF):- unir_palabras(P,AS), mapear_atomos(AS,[],MF).
+
+unir_palabras([],[]).
+unir_palabras([AS|ASS],R):- unir_palabras(ASS,Rec), append(AS,Rec,R).
+
+mapear_atomos([],M,M).
+mapear_atomos([A|AS],MI,MF):- asignar_var(A,MI,M), mapear_atomos(AS,M,MF).
+
+aplicar_mapeo_palabras([],_,[]).
+aplicar_mapeo_palabras([AS|ASS],MF,[VS|VSS]):- aplicar_mapeo_atomos(AS,MF,VS), aplicar_mapeo_palabras(ASS,MF,VSS).
+
+aplicar_mapeo_atomos([],_,[]).
+aplicar_mapeo_atomos([A|AS],M,[V|VS]):- aplicar_var(A,M,V), aplicar_mapeo_atomos(AS,M,VS).
+
+aplicar_var(A,[(A,V)|_],V).
+aplicar_var(A,[(B,_)|M],V):- A \= B, aplicar_var(A,M,V).
 
 % quitar(E, L, R)
 
