@@ -62,16 +62,15 @@ asignar_var(A, MI, MI):- nonvar(A), member((A, _), MI).
 asignar_var(A, MI, [(A, _) | MI]):- nonvar(A), not(member((A, _), MI)).
 
 % palabras_con_variables(P, V)
-palabras_con_variables(P,V):- mapear(P,[],MF), aplicar_mapeo(P,MF,V).
+palabras_con_variables(P,V):- palabras_con_variables_aux(P,[],V).
 
-mapear([],M,M).
-mapear([ [] |ASS],MI,MF):- mapear(ASS,MI,MF).
-mapear([ [A|AS] |ASS],MI,MF):- asignar_var(A,MI,M), mapear([AS|ASS],M,MF).
-
-aplicar_mapeo([],_,[]).
-aplicar_mapeo([ [] |ASS],MF,[ [] |VSS]):- aplicar_mapeo(ASS,MF,VSS).
-aplicar_mapeo([ [A|AS] |ASS],MF,[[V|VS]|VSS]):- aplicar_var(A,MF,V),
-                                                aplicar_mapeo([AS|ASS],MF,[VS|VSS]).
+palabras_con_variables_aux([],_,[]).
+palabras_con_variables_aux([ [] |ASS],M,[ [] |VSS]):-
+    palabras_con_variables_aux(ASS,M,VSS).
+palabras_con_variables_aux([ [A|AS] |ASS],MI,[ [V|VS] |VSS]):-
+    asignar_var(A,MI,MF),
+    aplicar_var(A,MF,V),
+    palabras_con_variables_aux([AS|ASS],MF,[VS|VSS]).
 
 aplicar_var(A,[(A,V)|_],V).
 aplicar_var(A,[(B,_)|M],V):- A \= B, aplicar_var(A,M,V).
