@@ -75,9 +75,16 @@ palabras_con_variables_aux([ [A|AS] |ASS],MI,[ [V|VS] |VSS]):-
 aplicar_var(A,[(A,V)|_],V).
 aplicar_var(A,[(B,_)|M],V):- A \= B, aplicar_var(A,M,V).
 
-% quitar(E, L, R)
+% quitar(?E,L,R) - L puede ser una lista semi-instanciada
+quitar(A,L,R):- exclude(iguales(A),L,R).
+
+iguales(X,Y):- X==Y.
 
 % cant_distintos(L, S)
+cant_distintos([],0).
+cant_distintos([X|XS],S):- quitar(X,XS,SinX), cant_distintos(SinX,Srec), S is 1+Srec.
+%cant_distintos(L, S):- not(ground(L)), numbervars(L), cant_distintos(L,S).
+%cant_distintos([A|AS],S):- ground([A|AS]), delete(AS,A,L), cant_distintos(L,Srec), S is 1+Srec.
 
 % descifrar(S, M)
 
