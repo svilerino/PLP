@@ -87,7 +87,13 @@ cant_distintos([X|XS],S):- quitar(X,XS,SinX), cant_distintos(SinX,Srec), S is 1+
 %cant_distintos([A|AS],S):- ground([A|AS]), delete(AS,A,L), cant_distintos(L,Srec), S is 1+Srec.
 
 % descifrar(S, M)
+descifrar(S,M):-
+    palabras(S,P), palabras_con_variables(P,Pvar),
+    maplist(diccionario_lista,Pvar), %Pvar unifica con palabras del diccionario ascii
+    juntar_con(Pvar,32,Mascii), %Mascii es Pvar, pero en una sola lista poniendo un espacio entre las palabras.
+    string_codes(M,Mascii). %M es Mascii pero en chars
 
+%
 % descifrar_sin_espacios(S, M)
 
 % mensajes_mas_parejos(S, M)
