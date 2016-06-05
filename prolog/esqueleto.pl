@@ -65,14 +65,15 @@ palabras(S, P) :- juntar_con(P, espacio, S), not((member(Palabra, P), member(esp
 % MI u MF debe estar instanciada (al menos una). En el caso contrario se entra
 % en un ciclo infinito que no recorre todos los posibles valores. TODO: AMPLIAR
 %
-% Explicaciones de cada Instanciación:
 % +A: A debe estar instanciada pues los meta-predicados nonvar(A) de todas las
 % clausulas de este predicado asi lo fuerzan. Si no lo estuviera, y se tiene una
 % combinacion de variables instanciadas que nos lleva a la primera clausula, esta
 % devuelve error ya que el "pattern matching" de la clausula no permite unificar
 % a la variable A, y luego el predicado nonvar(A) devuelve false.
 %
+%
 % ?MI: 
+%
 %
 % ?MF: 
 % TODO: analisis de reversibilidad, comentario explicando porque anda
@@ -85,13 +86,13 @@ palabras_con_variables(P,V):- actualizar_aplicar_mapeo(P,[],V).
 
 % actualizar_aplicar_mapeo(+P,+M,-V)
 %
-% Explicaciones de cada Instanciación:
 % -V: Si V llegase a estar instanciada, las variables del mismo deberian
 % coincidir exactamente con todas las que se obtienen a partir de asignar_var
 % para obtener true, lo cual si bien no es imposible, tiene una probabilidad
 % muy muy baja (y al problema no le interesan los numeros internos de
 % variables, sino que asignado un numero de variable a un átomo, este se
 % respete en el resto de las palabras).
+%
 %
 % +P: Si P no llega a estar instanciada, se entra en un bucle infinito entre
 % las dos primeras clausulas de este predicado (nunca se llega a entrar a la
@@ -108,10 +109,12 @@ palabras_con_variables(P,V):- actualizar_aplicar_mapeo(P,[],V).
 % instanciados se cae en la tercer clausula de este predicado, y se viola la
 % especificación de asignar_var(A,MI,MF) al pasarle un A no instanciado.
 %
+%
 % +M: El motivo principal por el cual se requiere que M esté instanciada es que
 % al utilizarse la tercera clausula de este predicado, se utiliza el predicado
 % asignar_var(A,MI,MF) con tanto MI y MF no instanciados, violando la
 % especificación del predicado.
+%
 actualizar_aplicar_mapeo([],_,[]).
 actualizar_aplicar_mapeo([ [] |ASS],M,[ [] |VSS]):-
     actualizar_aplicar_mapeo(ASS,M,VSS).
@@ -120,9 +123,9 @@ actualizar_aplicar_mapeo([ [A|AS] |ASS],MI,[ [V|VS] |VSS]):-
     aplicar_var(A,MF,V),
     actualizar_aplicar_mapeo([AS|ASS],MF,[VS|VSS]).
 
+
 % aplicar_var(+A,+M,-V)
 %
-% Explicaciones de cada Instanciación:
 % +A: Si A no llegase a estar instanciada, los resultados obtenidos no son
 % correctos y/o completos dependiendo de las instanciaciones de M y V. En
 % particular supongamos que M ha de estar instanciada (ver el análisis de dicha
@@ -155,6 +158,7 @@ actualizar_aplicar_mapeo([ [A|AS] |ASS],MI,[ [V|VS] |VSS]):-
 % otro número se estarían unificando dos variables de M, y esto viola la
 % condición de M de asignar una variable distinta a cada átomo.
 %
+%
 % +M: Si M no llegase a estar instanciada, ocurre (en escencia) lo mismo que
 % con el análisis de reversibilidad de A. Se logran unificar las cosas para
 % poder coincidir con las condiciones de la primera clausula (y en este caso
@@ -181,6 +185,7 @@ actualizar_aplicar_mapeo([ [A|AS] |ASS],MI,[ [V|VS] |VSS]):-
 % (no unificada) cuando se evalúa el predicado "A\=B", el cual da siempre false
 % ya que requiere que ambos parámetros sean términos.
 %
+%
 % -V: Teniendo ya a A y M como parámetros instanciados, si V no está instanciada
 % su valor siempre se unificará con la segunda componente de la tupla de M que
 % tenga como primera componente a A (si existe). Caso contrario, el predicado
@@ -199,12 +204,77 @@ aplicar_var(A,[(A,V)|_],V).
 aplicar_var(A,[(B,_)|M],V):- A \= B, aplicar_var(A,M,V).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% quitar(?E,L,R) - L puede ser una lista semi-instanciada
+% quitar(?E,+L,?R)
+% L puede ser una lista semi-instanciada
 %
-% Explicaciones de cada Instanciación:
-quitar(A,L,R):- exclude(iguales(A),L,R).
+% ?E: El predicado funciona tanto este E instanciada como si no, ya que en
+% las clausulas se utilizan operadores que comparan a E visto como término, con
+% lo cual trabajar con una variable o algo instanciado será interpretado de la
+% misma manera. WARNING!!! VERIFCAR ESTO
+%
+%
+% +L: Debemos analizar caso por caso para explicar bien por qué L ha de estar al
+% menos semi-instanciada:
+%
+% Si L no está instanciada, R y E lo están: Se entrará en la primera clausula
+% sólo si R está instanciada en la lista vacía, en cuyo caso el resultado de L
+% será una lista vacía, lo cual es correcto. El inconveniente ocurre luego, pues
+% existen otras posibles instanciaciones de L (ej: [E]) que debería devolver
+% el predicado pero no lo hace.
+%
+% Tanto en la segunda como tercera clausula se unifica a L con una no vacía. En
+% el caso de la segunda clausula, el predicado "E==X" falla ya que X es una
+% variable fresca que se compara contra E, que es una variable instanciada (y
+% la comparación de términas fallará). Justamente aquí se dejan de considerar
+% las demás posibles instanciaciones válidas de L, pues es la clausula donde
+% se considera que L originalmente tenía elementos iguales a E y que fueron
+% quitados de R.
+%
+% En el caso de la clausla restante, se unificara a X con el primer elemento de
+% R (es decir, X no es una variable fresca, sino que está instanciada). Si
+% "E\==X" evalúa en false, no se devuelve ningún valor más (correctamnete, pues
+% R tiene el elemento que se quitó de L), y en el caso contrario se hace el
+% llamado recursivo. Si esto último ocurre, se repite todo el proceso sobre la
+% cola de R. Si E no se encuentra en el R inicial, entonces el resultado
+% terminará diciendo L = R (se recorre todo R y se van unificando los elementos
+% de este a los de L siempre que no sean iguales a E).
+%
+% Si L y E no están instanciadas y R lo está: Ocurre lo mismo que en la
+% combinación de instanciaciones previa, ya que los predicados "==" y "\="
+% comparan términos, y sea E una variable o una instancia, estos predicados
+% darán los mismos resultados.
+%
+% Si L y R no están instanciadas y E lo está: La primera clausula siempre
+% unificará L con R y con []. En el caso de la segunda clausula, ocurrirá lo
+% mismo que en los casos analizados previamente (es decir, nunca se evaluará
+% en true), y por último se llega a la tercera clausula donde se unifica
+% a L y R como dos listas no vacías que tienen el mismo primer elemento. Dicha
+% clausula se evaluará en true pues X se unifica con una variable fresca que
+% jamás coincidirá con la instanciación de E y además el llamado recursivo
+% repetirá los pasos previos con la cola de las listas L y R (que eventualmente
+% serán unificadas al reevaluarse la primera clausula). Es decir, L y R siempre
+% terminarán unificadas para todos los resultados devueltos, y en cada paso
+% se les agregara una variable fresca como elemento, pero nunca se asegura que
+% estas variables frescas serán distintas de E en R ni se toman en cuenta
+% listas L con elementos E.
+%
+% Si L, E y R no están instancadas: Dado que los predicados "==" comparan
+% términos, tener a E no instanciada tendrá el mismo comportamiento que tenerla
+% instanciada, con lo cual se obtienen los mismos resultados que en el caso
+% analizado previamente.
+%
+%
+% ?R: Si R no está instanciada, se irán instanciando sus elementos con aquellos
+% de L distintos del término E. En caso de estar instanciada, se tratará de
+% unificar con los elementos de R con los de L distintos del término E 
+%
+quitar(_,[],[]).
+quitar(E,[X|XS],R):- E==X, quitar(E,XS,R).
+quitar(E,[X|XS],[X|R]):- E\==X, quitar(E,XS,R).
 
-iguales(X,Y):- X==Y.
+%quitar(E,L,R):- exclude(iguales(E),L,R).
+%iguales(X,Y) TODO: Enviar mail preguntando como es la reversibilidad de ==
+%iguales(X,Y):- X==Y.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % cant_distintos(L, S)
