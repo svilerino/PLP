@@ -28,6 +28,7 @@ ej(2, [rombo, cuadrado, espacio, perro, triangulo, sol, cuadrado]).
 
 ej(3, [rombo, cuadrado, perro, cuadrado, sol, luna, triangulo, estrella, arbol, gato]).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % diccionario_lista(?Y)
 % Si Y no esta instanciado, Y se va a instanciar en las listas de codigos ASCII
 % correspondiente a cada palabra presente en el diccionario. Si esta instanciado,
@@ -35,6 +36,7 @@ ej(3, [rombo, cuadrado, perro, cuadrado, sol, luna, triangulo, estrella, arbol, 
 % diccionario actual.
 diccionario_lista(Y) :- diccionario(X), string_codes(X, Y).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % juntar_con(?L, ?J, ?R)
 % Cuando L esta instanciada y R no, se instancia R con la lista que contiene a cada
 % elemento de cada lista de L, intercalandolas con J. En este caso, si J esta instanciada,
@@ -48,6 +50,7 @@ juntar_con([], _, []).
 juntar_con([X], _, X).
 juntar_con([X | Xs], J, R) :- append(X, [J | Rec], R), juntar_con(Xs, J, Rec), length(Rec, LRec), LRec > 0.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % palabras(?S, ?P)
 % Ya sea S o P deben estar instanciados, porque sino se cuelga.
 % Cuando S esta instanciado y P no, se instancia P con el resultado de separar S por el átomo espacio.
@@ -56,6 +59,7 @@ juntar_con([X | Xs], J, R) :- append(X, [J | Rec], R), juntar_con(Xs, J, Rec), l
 palabras([], []).
 palabras(S, P) :- juntar_con(P, espacio, S), not((member(Palabra, P), member(espacio, Palabra))).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % asignar_var(+A, ?MI, ?MF)
 %
 % MI u MF debe estar instanciada (al menos una). En el caso contrario se entra
@@ -75,37 +79,39 @@ palabras(S, P) :- juntar_con(P, espacio, S), not((member(Palabra, P), member(esp
 asignar_var(A, MI, MI):- nonvar(A), member((A, _), MI).
 asignar_var(A, MI, [(A, _) | MI]):- nonvar(A), not(member((A, _), MI)).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % palabras_con_variables(+P,-V)
 palabras_con_variables(P,V):- actualizar_aplicar_mapeo(P,[],V).
 
 % actualizar_aplicar_mapeo(+P,+M,-V)
 %
 % Explicaciones de cada Instanciación:
-% -V: Si V llegase a estar instanciada, las variables del mismo deberian coincidir
-% exactamente con todas las que se obtienen a partir de asignar_var para obtener
-% true, lo cual si bien no es imposible, tiene una probabilidad muy muy baja (y
-% al problema no le interesan los numeros internos de variables, sino que asignado
-% un numero de variable a un átomo, este se respete en el resto de las palabras).
+% -V: Si V llegase a estar instanciada, las variables del mismo deberian
+% coincidir exactamente con todas las que se obtienen a partir de asignar_var
+% para obtener true, lo cual si bien no es imposible, tiene una probabilidad
+% muy muy baja (y al problema no le interesan los numeros internos de
+% variables, sino que asignado un numero de variable a un átomo, este se
+% respete en el resto de las palabras).
 %
-% +P: Si P no llega a estar instanciada, se entra en un bucle infinito entre las
-% dos primeras clausulas de este predicado (nunca se llega a entrar a la tercera
-% clausula). Al no estar instanciadas P y V, para poder aplicar la primer clausula
-% se unifican (P = V) y luego se unifican con la lista vacía. Luego se retrocede
-% en el backtracking y se entra en la segunda clausula, donde se unifica tanto
-% a P como a V con una lista con al menos una lista vacia como elemento, y se
-% llama recursivamente al predicado, volviendo a pasar todo lo que se explica a
-% aquí. Es decir, se entra en bucle infinito donde P y V terminan siendo unificadas
-% entre si y con una lista de listas vacias, donde en cada paso de la recursión
-% se agrega una nueva lista vacía.
+% +P: Si P no llega a estar instanciada, se entra en un bucle infinito entre
+% las dos primeras clausulas de este predicado (nunca se llega a entrar a la
+% tercera clausula). Al no estar instanciadas P y V, para poder aplicar la
+% primer clausula se unifican (P = V) y luego se unifican con la lista vacía.
+% Luego se retrocede en el backtracking y se entra en la segunda clausula,
+% donde se unifica tanto a P como a V con una lista con al menos una lista
+% vacia como elemento, y se llama recursivamente al predicado, volviendo a
+% pasar todo lo que se explica a aquí. Es decir, se entra en bucle infinito
+% donde P y V terminan siendo unificadas entre si y con una lista de listas
+% vacias, donde en cada paso de la recursión se agrega una nueva lista vacía.
 %
 % Si P estuviese semi-instanciada, además, al llegar a uno de sus elementos no
 % instanciados se cae en la tercer clausula de este predicado, y se viola la
 % especificación de asignar_var(A,MI,MF) al pasarle un A no instanciado.
 %
-% +M: El motivo principal por el cual se requiere que M esté instanciada es
-% que al utilizarse la tercera clausula de este predicado, se utiliza el predicado
-% asignar_var(A,MI,MF) con tanto MI y MF no instanciados, violando la especificación
-% del predicado.
+% +M: El motivo principal por el cual se requiere que M esté instanciada es que
+% al utilizarse la tercera clausula de este predicado, se utiliza el predicado
+% asignar_var(A,MI,MF) con tanto MI y MF no instanciados, violando la
+% especificación del predicado.
 actualizar_aplicar_mapeo([],_,[]).
 actualizar_aplicar_mapeo([ [] |ASS],M,[ [] |VSS]):-
     actualizar_aplicar_mapeo(ASS,M,VSS).
@@ -114,20 +120,100 @@ actualizar_aplicar_mapeo([ [A|AS] |ASS],MI,[ [V|VS] |VSS]):-
     aplicar_var(A,MF,V),
     actualizar_aplicar_mapeo([AS|ASS],MF,[VS|VSS]).
 
+% aplicar_var(+A,+M,-V)
+%
+% Explicaciones de cada Instanciación:
+% +A: Si A no llegase a estar instanciada, los resultados obtenidos no son
+% correctos y/o completos dependiendo de las instanciaciones de M y V. En
+% particular supongamos que M ha de estar instanciada (ver el análisis de dicha
+% variable), asi pues las explicaciones a continuación corresponden a los casos
+% +V y -V (ya que V es un parámetro reversible del predicado).
+%
+% Al tratar de utilizar la primer clausula, se unificará la variable A con el
+% primer componente del primer elemento/mapeo/tupla de M (que está
+% instanciada).  Luego, ocurrirá lo mismo con V y el segundo elemento de esta
+% tupla (este o no V instanciada, ya que en ambos casos se está unificando una
+% variable con otra).
+%
+% Si V no estaba instanciada en un número explícito de variable, este resultado
+% es un resultado válido, pero existen más resultados válidos si M tiene más
+% elementos/tuplas a continuación (A y V unificados con la primera y segunda
+% componente -respectivamente- de estas otras tuplas), los cuales no son
+% devueltos pues no se puede aplicar la segúnda clausula con estas
+% instanciaciones.  Esto ocurre pues la segunda clausula utiliza el predicado
+% "\=" con A y B, y si bien B es unificado con el término correspondiente al
+% primer elemento de la primera tupla de M, A sigue siendo una variable no
+% unificada; y el predicado "\=" requiere que sus dos parámetros sean términos.
+% Por lo tanto siempre devuelve "false" y no se consideran los demás
+% mapeos/tuplas de M.
+%
+% En caso de que V estuviera instanciada en un número de variable, ocurrirá
+% lo mismo descripto para el caso en el que no lo está, con la salvedad de que
+% el resultado obtenido podría incluso ser inválido, ya que se mapea un número
+% de variable con otro número de variable, y el número instanciado en V podría
+% llegar a ser utilizado en otra tupla de M, con lo cual al unificar V con
+% otro número se estarían unificando dos variables de M, y esto viola la
+% condición de M de asignar una variable distinta a cada átomo.
+%
+% +M: Si M no llegase a estar instanciada, ocurre (en escencia) lo mismo que
+% con el análisis de reversibilidad de A. Se logran unificar las cosas para
+% poder coincidir con las condiciones de la primera clausula (y en este caso
+% se devuelve un resultado inválido), y luego no se analizan más casos ya que
+% ahora no se logra unificar de manera tal de llegar al llamado recursivo de la
+% segunda clausula. A continuación se explica porque.
+%
+% En el caso de la primera clausula, al unificar los parámentros A y V con M
+% según la estructura descripta en la clausula, se termina unificando a M con
+% una lista de la forma [(A,V) | _Gxxx] (con el valor instanciado de A y V si
+% estuvieran instanciadas, o las variables mismas en el caso contrario). Y este
+% resultado de M no es necesariamente correcto, ya que depende de en que se
+% instancie la cola de la misma (_Gxxx). Es decir, esta instanciación sería
+% solo válida si se tiene un predicado que nos asegura que no existe tupla en
+% _Gxxx que utilice a A y/o V.
+%
+% Si se admitiese que el valor de M obtenido por la unificación de la primera
+% clausula es correcto, el siguiente inconveniente es que existen más mapeos
+% (infinitos, de hecho) los cuales nunca son recorridos pues nunca se llega
+% a considerar el llamado recursivo de la segunda clausula. Esto ocurre pues,
+% nuevamente, la unificación no logra otorgar un valor a uno de los parámetros
+% del predicado "\=", en este caso dicho parámetro es B. B no unifica con
+% ningún valor pues M no está instanciada, con lo cual sigue siendo una variable
+% (no unificada) cuando se evalúa el predicado "A\=B", el cual da siempre false
+% ya que requiere que ambos parámetros sean términos.
+%
+% -V: Teniendo ya a A y M como parámetros instanciados, si V no está instanciada
+% su valor siempre se unificará con la segunda componente de la tupla de M que
+% tenga como primera componente a A (si existe). Caso contrario, el predicado
+% devolvera false.
+%
+% Si V llegase a estar instanciada, podría dar un resultado válido si justo se
+% instancia en el número de variable que corresponde al mapeo de A en M. Pero
+% si este no es el caso, se termina unificando V con el mapeo de A en M (es
+% decir, se unifican dos números de variable distintos) y se devuelve true. Aquí
+% ocurre que la instanciación de V podría ser el número de variable del mapeo
+% de otro átomo B en M, lo cual terminaría diciendo que existe un mísmo número
+% de variable para los átomos A y B en M, lo cual es incorrecto ya que M es un
+% mapeo válido).
+%
 aplicar_var(A,[(A,V)|_],V).
 aplicar_var(A,[(B,_)|M],V):- A \= B, aplicar_var(A,M,V).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % quitar(?E,L,R) - L puede ser una lista semi-instanciada
+%
+% Explicaciones de cada Instanciación:
 quitar(A,L,R):- exclude(iguales(A),L,R).
 
 iguales(X,Y):- X==Y.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % cant_distintos(L, S)
 cant_distintos([],0).
 cant_distintos([X|XS],S):- quitar(X,XS,SinX), cant_distintos(SinX,Srec), S is 1+Srec.
 %cant_distintos(L, S):- not(ground(L)), numbervars(L), cant_distintos(L,S).
 %cant_distintos([A|AS],S):- ground([A|AS]), delete(AS,A,L), cant_distintos(L,Srec), S is 1+Srec.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % descifrar(S, M)
 descifrar(S,M):-
     palabras(S,P), palabras_con_variables(P,Pvar),
@@ -135,7 +221,8 @@ descifrar(S,M):-
     juntar_con(Pvar,32,Mascii), %Mascii es Pvar, pero en una sola lista poniendo un espacio entre las palabras.
     string_codes(M,Mascii). %M es Mascii pero en chars
 
-%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % descifrar_sin_espacios(S, M)
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % mensajes_mas_parejos(S, M)
