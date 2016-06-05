@@ -56,21 +56,63 @@ juntar_con([X | Xs], J, R) :- append(X, [J | Rec], R), juntar_con(Xs, J, Rec), l
 palabras([], []).
 palabras(S, P) :- juntar_con(P, espacio, S), not((member(Palabra, P), member(espacio, Palabra))).
 
-% asignar_var(+A, MI, MF)
+% asignar_var(+A, ?MI, ?MF)
+%
+% MI u MF debe estar instanciada (al menos una). En el caso contrario se entra
+% en un ciclo infinito que no recorre todos los posibles valores. TODO: AMPLIAR
+%
+% Explicaciones de cada Instanciación:
+% +A: A debe estar instanciada pues los meta-predicados nonvar(A) de todas las
+% clausulas de este predicado asi lo fuerzan. Si no lo estuviera, y se tiene una
+% combinacion de variables instanciadas que nos lleva a la primera clausula, esta
+% devuelve error ya que el "pattern matching" de la clausula no permite unificar
+% a la variable A, y luego el predicado nonvar(A) devuelve false.
+%
+% ?MI: 
+%
+% ?MF: 
 % TODO: analisis de reversibilidad, comentario explicando porque anda
 asignar_var(A, MI, MI):- nonvar(A), member((A, _), MI).
 asignar_var(A, MI, [(A, _) | MI]):- nonvar(A), not(member((A, _), MI)).
 
-% palabras_con_variables(P, V)
-palabras_con_variables(P,V):- palabras_con_variables_aux(P,[],V).
+% palabras_con_variables(+P,-V)
+palabras_con_variables(P,V):- actualizar_aplicar_mapeo(P,[],V).
 
-palabras_con_variables_aux([],_,[]).
-palabras_con_variables_aux([ [] |ASS],M,[ [] |VSS]):-
-    palabras_con_variables_aux(ASS,M,VSS).
-palabras_con_variables_aux([ [A|AS] |ASS],MI,[ [V|VS] |VSS]):-
+% actualizar_aplicar_mapeo(+P,+M,-V)
+%
+% Explicaciones de cada Instanciación:
+% -V: Si V llegase a estar instanciada, las variables del mismo deberian coincidir
+% exactamente con todas las que se obtienen a partir de asignar_var para obtener
+% true, lo cual si bien no es imposible, tiene una probabilidad muy muy baja (y
+% al problema no le interesan los numeros internos de variables, sino que asignado
+% un numero de variable a un átomo, este se respete en el resto de las palabras).
+%
+% +P: Si P no llega a estar instanciada, se entra en un bucle infinito entre las
+% dos primeras clausulas de este predicado (nunca se llega a entrar a la tercera
+% clausula). Al no estar instanciadas P y V, para poder aplicar la primer clausula
+% se unifican (P = V) y luego se unifican con la lista vacía. Luego se retrocede
+% en el backtracking y se entra en la segunda clausula, donde se unifica tanto
+% a P como a V con una lista con al menos una lista vacia como elemento, y se
+% llama recursivamente al predicado, volviendo a pasar todo lo que se explica a
+% aquí. Es decir, se entra en bucle infinito donde P y V terminan siendo unificadas
+% entre si y con una lista de listas vacias, donde en cada paso de la recursión
+% se agrega una nueva lista vacía.
+%
+% Si P estuviese semi-instanciada, además, al llegar a uno de sus elementos no
+% instanciados se cae en la tercer clausula de este predicado, y se viola la
+% especificación de asignar_var(A,MI,MF) al pasarle un A no instanciado.
+%
+% +M: El motivo principal por el cual se requiere que M esté instanciada es
+% que al utilizarse la tercera clausula de este predicado, se utiliza el predicado
+% asignar_var(A,MI,MF) con tanto MI y MF no instanciados, violando la especificación
+% del predicado.
+actualizar_aplicar_mapeo([],_,[]).
+actualizar_aplicar_mapeo([ [] |ASS],M,[ [] |VSS]):-
+    actualizar_aplicar_mapeo(ASS,M,VSS).
+actualizar_aplicar_mapeo([ [A|AS] |ASS],MI,[ [V|VS] |VSS]):-
     asignar_var(A,MI,MF),
     aplicar_var(A,MF,V),
-    palabras_con_variables_aux([AS|ASS],MF,[VS|VSS]).
+    actualizar_aplicar_mapeo([AS|ASS],MF,[VS|VSS]).
 
 aplicar_var(A,[(A,V)|_],V).
 aplicar_var(A,[(B,_)|M],V):- A \= B, aplicar_var(A,M,V).
