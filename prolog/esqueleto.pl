@@ -337,31 +337,28 @@ descifrar_sin_espacios(S,M):-
 
     descifrar(S_con_espacios,M).
 
-%VER COMO INTEGRAR ESTE QUITAR2 A QUITAR
-%quitar2(_,[],[]).
-%quitar2(E,[E|XS],R):- quitar2(E,XS,R).
-%quitar2(E,[X|XS],[X|R]):- E\=X, quitar2(E,XS,R).
-
-
-%descifrar_sin_espacios(S,M):-
-%    not(member(espacio,S)),
-%    length(S,Letras),
-%    between(1,Letras,Cant_palabras),
-%    length(P,Cant_palabras),
-%    maplist(sublista(S),P),
-%    flatten(P,S),
-%    juntar_con(P,espacio,P_con_espacios),
-%    descifrar(P_con_espacios,M).
-
-%prefijo(L,P):- append(P,_,L).
-%sufijo(L,S):- append(_,S,L).
-%sublista(L,Sub):- sufijo(L,P), prefijo(P,Sub), Sub \= [].
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%desviacion_estandar(M, D) % HAY QUE DEFINIRLA
-desviacion_estandar(M, 1).
-
 % mensajes_mas_parejos(S, M)
-mensajes_mas_parejos(S, M) :- 
-    descifrar_sin_espacios(S, M1), desviacion_estandar(M1, D1),
-    not((descifrar_sin_espacios(S, M2), desviacion_estandar(M2, D2), D1 > D2)).
+mensajes_mas_parejos(S, M) :-
+    setof((Std,Msg),(descifrar_sin_espacios(S,Msg),std_mensaje(Msg,Std)),Msgs_con_std),
+    %El resultado ya viene ordenado y sin repetidos, gracias a setof y que pusimos primero el STD en la lista
+    Msgs_con_std = [(Std_min,_)|_],
+    member((Std,M),Msgs_con_std),
+    Std =< Std_min.
+
+
+% std_mensaje(String,STD)
+std_mensaje(S,STD):-
+    aggregate_all(bag(L),(split_string(S," "," ",Palabras),member(P,Palabras),string_length(P,L)),Longs),
+    desviacion_estandar(Longs,STD).
+
+
+%desviacion_estandar(List,STD)
+desviacion_estandar(L, STD):-
+    length(L,Cant),
+    media(L,Media),
+    aggregate_all(sum(Sumando),(member(X,L),Sumando is (X-Media)^2),Sum),
+    STD is sqrt(Sum / Cant).
+
+%media(List,Mean)
+media(L,M):- length(L,Cant), sum_list(L,Sum), M is Sum / Cant.
