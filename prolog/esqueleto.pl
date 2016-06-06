@@ -268,9 +268,16 @@ aplicar_var(A,[(B,_)|M],V):- A \= B, aplicar_var(A,M,V).
 % de L distintos del término E. En caso de estar instanciada, se tratará de
 % unificar con los elementos de R con los de L distintos del término E 
 %
+%quitar(_,[],[]).
+%quitar(E,[X|XS],R):- E==X, quitar(E,XS,R).
+%quitar(E,[X|XS],[X|R]):- E\==X, quitar(E,XS,R).
+
 quitar(_,[],[]).
 quitar(E,[X|XS],R):- E==X, quitar(E,XS,R).
 quitar(E,[X|XS],[X|R]):- E\==X, quitar(E,XS,R).
+
+quitar(E,[X|XS],R):- nonvar(E),maplist(var,[X|XS]), ground(R), E=X, quitar(E,XS,R).
+quitar(E,[X|XS],[Y|R]):- nonvar(E), maplist(var,[X|XS]), ground([Y|R]), E\=X, X=Y, quitar(E,XS,R).
 
 %quitar(E,L,R):- exclude(iguales(E),L,R).
 %%iguales(X,Y) TODO: Enviar mail preguntando como es la reversibilidad de ==
@@ -308,7 +315,7 @@ descifrar_sin_espacios(S,M):-
 
     %Instanciamos los posibles mensajes de longitud Long_S_con_espacios que al
     %quitarle los espacios sea S
-    quitar2(espacio,S_con_espacios,S),  
+    quitar(espacio,S_con_espacios,S),
 
     %Optimizacion para no considerar casos que empiezan con un espacio
     not(nth1(1,S_con_espacios,espacio)),
@@ -322,10 +329,11 @@ descifrar_sin_espacios(S,M):-
     descifrar(S_con_espacios,M).
 
 %VER COMO INTEGRAR ESTE QUITAR2 A QUITAR
-quitar2(_,[],[]).
-quitar2(E,[E|XS],R):- quitar2(E,XS,R).
-quitar2(E,[X|XS],[X|R]):- E\=X, quitar2(E,XS,R).
-%
+%quitar2(_,[],[]).
+%quitar2(E,[E|XS],R):- quitar2(E,XS,R).
+%quitar2(E,[X|XS],[X|R]):- E\=X, quitar2(E,XS,R).
+
+
 %descifrar_sin_espacios(S,M):-
 %    not(member(espacio,S)),
 %    length(S,Letras),
