@@ -290,6 +290,8 @@ quitar(E,[X|XS],[Y|R]):- nonvar(E), maplist(var,[X|XS]), ground([Y|R]), E\=X, X=
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % cant_distintos(+L, ?S)
 %
+% Si L no esta instanciada, se llama a quitar(X,XS,SinX) rompiendo la precondicion de que L debe estar al menos semi-instanciada con los problemas que eso trae.
+% Particularmente, cant_distintos se cuelga si se pasa una lista no instanciada.
 % Dada una lista L instanciada, 
 %   Si S esta instanciado, se devuelve true o false dependiendo de la validez de el predicado.
 %   Si S no esta instanciado, se devuelve en S la cantidad de elementos distintos de L.
