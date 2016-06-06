@@ -273,26 +273,72 @@ quitar(E,[X|XS],R):- E==X, quitar(E,XS,R).
 quitar(E,[X|XS],[X|R]):- E\==X, quitar(E,XS,R).
 
 %quitar(E,L,R):- exclude(iguales(E),L,R).
-%iguales(X,Y) TODO: Enviar mail preguntando como es la reversibilidad de ==
+%%iguales(X,Y) TODO: Enviar mail preguntando como es la reversibilidad de ==
 %iguales(X,Y):- X==Y.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % cant_distintos(L, S)
 cant_distintos([],0).
 cant_distintos([X|XS],S):- quitar(X,XS,SinX), cant_distintos(SinX,Srec), S is 1+Srec.
-%cant_distintos(L, S):- not(ground(L)), numbervars(L), cant_distintos(L,S).
-%cant_distintos([A|AS],S):- ground([A|AS]), delete(AS,A,L), cant_distintos(L,Srec), S is 1+Srec.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % descifrar(S, M)
 descifrar(S,M):-
     palabras(S,P), palabras_con_variables(P,Pvar),
+    cant_distintos(Pvar,Antes),
     maplist(diccionario_lista,Pvar), %Pvar unifica con palabras del diccionario ascii
+    cant_distintos(Pvar,Despues),
+    Antes = Despues, %Evitamos una unificacion que asigne una letra a 2 variables distintas
     juntar_con(Pvar,32,Mascii), %Mascii es Pvar, pero en una sola lista poniendo un espacio entre las palabras.
     string_codes(M,Mascii). %M es Mascii pero en chars
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % descifrar_sin_espacios(S, M)
+
+descifrar_sin_espacios(S,M):-
+    not(member(espacio,S)), %verificacion del input
+    length(S,Letras),
+
+    %Con_max_espacios es la longitud si se intercala un espacio entre letra y
+    %letra.
+    Con_max_espacios is Letras*2-1,
+
+    between(Letras,Con_max_espacios,Long_S_con_espacios),
+    length(S_con_espacios,Long_S_con_espacios),
+
+    %Instanciamos los posibles mensajes de longitud Long_S_con_espacios que al
+    %quitarle los espacios sea S
+    quitar2(espacio,S_con_espacios,S),  
+
+    %Optimizacion para no considerar casos que empiezan con un espacio
+    not(nth1(1,S_con_espacios,espacio)),
+
+    %Optimizacion para no considerar casos que terminan con un espacio
+    not(nth1(Long_S_con_espacios,S_con_espacios,espacio)),
+
+    %Optimizacion para no considerar casos que tienen espacios consecutivos
+    not(nextto(espacio,espacio,S_con_espacios)),
+
+    descifrar(S_con_espacios,M).
+
+%VER COMO INTEGRAR ESTE QUITAR2 A QUITAR
+quitar2(_,[],[]).
+quitar2(E,[E|XS],R):- quitar2(E,XS,R).
+quitar2(E,[X|XS],[X|R]):- E\=X, quitar2(E,XS,R).
+%
+%descifrar_sin_espacios(S,M):-
+%    not(member(espacio,S)),
+%    length(S,Letras),
+%    between(1,Letras,Cant_palabras),
+%    length(P,Cant_palabras),
+%    maplist(sublista(S),P),
+%    flatten(P,S),
+%    juntar_con(P,espacio,P_con_espacios),
+%    descifrar(P_con_espacios,M).
+
+%prefijo(L,P):- append(P,_,L).
+%sufijo(L,S):- append(_,S,L).
+%sublista(L,Sub):- sufijo(L,P), prefijo(P,Sub), Sub \= [].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % mensajes_mas_parejos(S, M)
