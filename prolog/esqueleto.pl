@@ -295,4 +295,10 @@ descifrar(S,M):-
 % descifrar_sin_espacios(S, M)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%desviacion_estandar(M, D) % HAY QUE DEFINIRLA
+desviacion_estandar(M, 1).
+
 % mensajes_mas_parejos(S, M)
+mensajes_mas_parejos(S, M) :- 
+    descifrar_sin_espacios(S, M1), desviacion_estandar(M1, D1),
+    not((descifrar_sin_espacios(S, M2), desviacion_estandar(M2, D2), D1 > D2)).
