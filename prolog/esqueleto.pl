@@ -288,7 +288,12 @@ quitar(E,[X|XS],[Y|R]):- nonvar(E), maplist(var,[X|XS]), ground([Y|R]), E\=X, X=
 %iguales(X,Y):- X==Y.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% cant_distintos(L, S)
+% cant_distintos(+L, ?S)
+%
+% Dada una lista L instanciada, 
+%   Si S esta instanciado, se devuelve true o false dependiendo de la validez de el predicado.
+%   Si S no esta instanciado, se devuelve en S la cantidad de elementos distintos de L.
+%
 cant_distintos([],0).
 cant_distintos([X|XS],S):- quitar(X,XS,SinX), cant_distintos(SinX,Srec), S is 1+Srec.
 
