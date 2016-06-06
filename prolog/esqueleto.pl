@@ -63,7 +63,7 @@ palabras(S, P) :- juntar_con(P, espacio, S), not((member(Palabra, P), member(esp
 % asignar_var(+A, ?MI, ?MF)
 %
 % MI u MF debe estar instanciada (al menos una). En el caso contrario se entra
-% en un ciclo infinito que no recorre todos los posibles valores. TODO: AMPLIAR
+% en un ciclo infinito que no recorre todos los posibles valores.
 %
 % +A: A debe estar instanciada pues los meta-predicados nonvar(A) de todas las
 % clausulas de este predicado asi lo fuerzan. Si no lo estuviera, y se tiene una
@@ -71,12 +71,16 @@ palabras(S, P) :- juntar_con(P, espacio, S), not((member(Palabra, P), member(esp
 % devuelve error ya que el "pattern matching" de la clausula no permite unificar
 % a la variable A, y luego el predicado nonvar(A) devuelve false.
 %
+%Por otro lado,
 %
-% ?MI: 
+%asignar_var(A, MI, MI): unifica cuando le pasan lo mismo en los argumentos 2 y 3(ambos instanciados) 
+% y se quiere ver si A esta en el diccionario MI, de eso se encarga la clausula member((A, _), MI).
 %
+%En el ultimo caso, se tiene
 %
-% ?MF: 
-% TODO: analisis de reversibilidad, comentario explicando porque anda
+% Si MI esta instanciada y MF no,
+% entonces MF va a unificar cuando la tupla (A, _) no se encuentre ya en MI.
+% Si MF esta instanciada y MI no, MI se unifica con la cola de MF siempre y cuando (A, _) no este en MI.
 asignar_var(A, MI, MI):- nonvar(A), member((A, _), MI).
 asignar_var(A, MI, [(A, _) | MI]):- nonvar(A), not(member((A, _), MI)).
 
@@ -210,7 +214,7 @@ aplicar_var(A,[(B,_)|M],V):- A \= B, aplicar_var(A,M,V).
 % ?E: El predicado funciona tanto este E instanciada como si no, ya que en
 % las clausulas se utilizan operadores que comparan a E visto como término, con
 % lo cual trabajar con una variable o algo instanciado será interpretado de la
-% misma manera. WARNING!!! VERIFCAR ESTO
+% misma manera. 
 %
 %
 % +L: Debemos analizar caso por caso para explicar bien por qué L ha de estar al
