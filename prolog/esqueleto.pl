@@ -30,32 +30,45 @@ ej(3, [rombo, cuadrado, perro, cuadrado, sol, luna, triangulo, estrella, arbol, 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % diccionario_lista(?Y)
+%
 % Si Y no esta instanciado, Y se va a instanciar en las listas de codigos ASCII
-% correspondiente a cada palabra presente en el diccionario. Si esta instanciado,
-% el resultado del predicado es true si el string que representa pertenece al 
-% diccionario actual.
+% correspondiente a cada palabra presente en el diccionario. Si esta
+% instanciado, el resultado del predicado es true si el string que representa
+% pertenece al diccionario actual.
+
 diccionario_lista(Y) :- diccionario(X), string_codes(X, Y).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % juntar_con(?L, ?J, ?R)
-% Cuando L esta instanciada y R no, se instancia R con la lista que contiene a cada
-% elemento de cada lista de L, intercalandolas con J. En este caso, si J esta instanciada,
-% el valor de la misma es el que sera intercalado, y si no lo esta, se intercalara con la 
-% variable.
-% Cuando R esta instanciada y L no, se instancia L con cada posible lista que haga que L
-% intercalado con J sea igual a R. Igual que en el caso anterior, si J esta instanciada se
-% tomara su valor, y si no, cada posible valor perteneciente a R.
-% Si todo esta instanciado, el predicado verifica que intercalar L con J sea igual a R.
+%
+% Cuando L esta instanciada y R no, se instancia R con la lista que contiene a
+% cada elemento de cada lista de L, intercalandolas con J. En este caso, si J
+% esta instanciada, el valor de la misma es el que sera intercalado, y si no lo
+% esta, se intercalara con la variable.
+%
+% Cuando R esta instanciada y L no, se instancia L con cada posible lista que
+% haga que L intercalado con J sea igual a R. Igual que en el caso anterior, si
+% J esta instanciada se tomara su valor, y si no, cada posible valor
+% perteneciente a R.
+%
+% Si todo esta instanciado, el predicado verifica que intercalar L con J sea
+% igual a R.
+
 juntar_con([], _, []).
 juntar_con([X], _, X).
 juntar_con([X | Xs], J, R) :- append(X, [J | Rec], R), juntar_con(Xs, J, Rec), length(Rec, LRec), LRec > 0.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % palabras(?S, ?P)
+%
 % Ya sea S o P deben estar instanciados, porque sino se cuelga.
-% Cuando S esta instanciado y P no, se instancia P con el resultado de separar S por el átomo espacio.
-% Cuando P esta instanciado y S no, se instancia S con el resultado de juntar P (en el sentido de
-% la funcion anterior) con el átomo espacio.
+%
+% Cuando S esta instanciado y P no, se instancia P con el resultado de separar
+% S por el átomo espacio.
+%
+% Cuando P esta instanciado y S no, se instancia S con el resultado de juntar P
+% (en el sentido de la funcion anterior) con el átomo espacio.
+
 palabras([], []).
 palabras(S, P) :- juntar_con(P, espacio, S), not((member(Palabra, P), member(espacio, Palabra))).
 
@@ -80,6 +93,7 @@ palabras(S, P) :- juntar_con(P, espacio, S), not((member(Palabra, P), member(esp
 % si la variable A (junto con su variable libre) ya esta definida en la lista 
 % funciona porque al ser libre puede unificar con cualquier cosa, incluyendo otra 
 % variable libre.
+
 asignar_var(A, MI, MI):- nonvar(A), member((A, _), MI).
 asignar_var(A, MI, [(A, _) | MI]):- nonvar(A), not(member((A, _), MI)).
 
@@ -117,7 +131,7 @@ palabras_con_variables(P,V):- actualizar_aplicar_mapeo(P,[],V).
 % al utilizarse la tercera cláusula de este predicado, se utiliza el predicado
 % asignar_var(A,MI,MF) con tanto MI y MF no instanciados, violando la
 % especificación del predicado.
-%
+
 actualizar_aplicar_mapeo([],_,[]).
 actualizar_aplicar_mapeo([ [] |ASS],M,[ [] |VSS]):-
     actualizar_aplicar_mapeo(ASS,M,VSS).
@@ -202,75 +216,55 @@ actualizar_aplicar_mapeo([ [A|AS] |ASS],MI,[ [V|VS] |VSS]):-
 % de otro átomo B en M, lo cual terminaría diciendo que existe un mísmo número
 % de variable para los átomos A y B en M, lo cual es incorrecto ya que M es un
 % mapeo válido).
-%
+
 aplicar_var(A,[(A,V)|_],V).
 aplicar_var(A,[(B,_)|M],V):- A \= B, aplicar_var(A,M,V).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % quitar(?E,+L,?R)
 % L puede ser una lista semi-instanciada. En caso de que lo sea, R ha de estar
-% completamente instanciada.
+% completamente instanciada. De igual manera, en caso de que R no esté
+% instanciada (o este semi-definida), L ha de estarlo completamente.
 %
 % ?E: El predicado funciona tanto este E instanciada como si no, ya que en
-% las cláusulas se utilizan operadores que comparan a E visto como término, con
-% lo cual trabajar con una variable o algo instanciado será interpretado de la
-% misma manera. 
+% las cláusulas de nuestra implementación E es comparada como término si es
+% libre, y en caso de que no lo sea es unificada con otra variable instanciada
+% (se asegura que lo sea -Y-) y es solo utilizada en el predicado recursivo y
+% "member", el cual admite que E este instanciada.
 %
 %
-% +L: Debemos analizar caso por caso para explicar bien por qué L ha de estar al
-% menos semi-instanciada:
+% +L: L puede ser una lista semi instanciada. Esto ocurre pues en la
+% implementación separamos en casos excluyentes (aunque no completos): en una
+% primera parte (cláusulas 2 y 3) evaluamos los casos donde R no está
+% instanciada y en una segunda parte (4 y 5) consideramos los casos donde R
+% está completamente instanciada.
 %
-% Si L no está instanciada, R y E lo están: Se entrará en la primera cláusula
-% sólo si R está instanciada en la lista vacía, en cuyo caso el resultado de L
-% será una lista vacía, lo cual es correcto. El inconveniente ocurre luego, pues
-% existen otras posibles instanciaciones de L (ej: [E]) que debería devolver
-% el predicado pero no lo hace.
+% Si R no está instanciada, el backtracking considera únicamente las cláusulas
+% 2 y 3. En tal caso, estas cláusulas comparan a E con los elementos de L
+% (esten instanciados o no) como términos (es decir, los comparan
+% sintácticamente).  Básicamente estas cláusulas son las que proveen la
+% funcionalidad pedidas por el ejercicio (las restantes son debidas al uso
+% posterior que se le dió en los ejercicios subsiguientes).
 %
-% Tanto en la segunda como tercera cláusula se unifica a L con una no vacía. En
-% el caso de la segunda cláusula, el predicado "E==X" falla ya que X es una
-% variable fresca que se compara contra E, que es una variable instanciada (y
-% la comparación de términas fallará). Justamente aquí se dejan de considerar
-% las demás posibles instanciaciones válidas de L, pues es la cláusula donde
-% se considera que L originalmente tenía elementos iguales a E y que fueron
-% quitados de R.
-%
-% En el caso de la clausla restante, se unificara a X con el primer elemento de
-% R (es decir, X no es una variable fresca, sino que está instanciada). Si
-% "E\==X" evalúa en false, no se devuelve ningún valor más (correctamnete, pues
-% R tiene el elemento que se quitó de L), y en el caso contrario se hace el
-% llamado recursivo. Si esto último ocurre, se repite todo el proceso sobre la
-% cola de R. Si E no se encuentra en el R inicial, entonces el resultado
-% terminará diciendo L = R (se recorre todo R y se van unificando los elementos
-% de este a los de L siempre que no sean iguales a E).
-%
-% Si L y E no están instanciadas y R lo está: Ocurre lo mismo que en la
-% combinación de instanciaciones previa, ya que los predicados "==" y "\="
-% comparan términos, y sea E una variable o una instancia, estos predicados
-% darán los mismos resultados.
-%
-% Si L y R no están instanciadas y E lo está: La primera cláusula siempre
-% unificará L con R y con []. En el caso de la segunda cláusula, ocurrirá lo
-% mismo que en los casos analizados previamente (es decir, nunca se evaluará
-% en true), y por último se llega a la tercera cláusula donde se unifica
-% a L y R como dos listas no vacías que tienen el mismo primer elemento. Dicha
-% cláusula se evaluará en true pues X se unifica con una variable fresca que
-% jamás coincidirá con la instanciación de E y además el llamado recursivo
-% repetirá los pasos previos con la cola de las listas L y R (que eventualmente
-% serán unificadas al reevaluarse la primera cláusula). Es decir, L y R siempre
-% terminarán unificadas para todos los resultados devueltos, y en cada paso
-% se les agregara una variable fresca como elemento, pero nunca se asegura que
-% estas variables frescas serán distintas de E en R ni se toman en cuenta
-% listas L con elementos E.
-%
-% Si L, E y R no están instancadas: Dado que los predicados "==" comparan
-% términos, tener a E no instanciada tendrá el mismo comportamiento que tenerla
-% instanciada, con lo cual se obtienen los mismos resultados que en el caso
-% analizado previamente.
+% Si R está completamente instanciada, y E también, no se evaluan en "true"
+% jamás las cláusulas 2 y 3 (debido al predicado "var(R)") y sólo se evalúan
+% las 4 y 5 (debido a los predicados "ground(R) y nonvar(E)"). Aquí se logra
+% unificar los elementos no instanciados de L (si los hubiese) debido a que se
+% utilizan luego los predicados "\=" y "=" que unifican en lugar de comparar
+% términos sintácticos.
 %
 %
-% ?R: Si R no está instanciada, se irán instanciando sus elementos con aquellos
-% de L distintos del término E. En caso de estar instanciada, se tratará de
-% unificar con los elementos de R con los de L distintos del término E 
+% ?R: Como se ha explicado, la implementación de este predicado divide en dos
+% casos excluyentes, el caso en que R no esté instanciada y y el caso en que lo
+% este (o esté semidefinida, caso en el que L ha de estar instanciada
+% completamente). En el caso de que esté libre, solo son evaluables por true las
+% cláusulas 2 y 3 (ya que ground(R) de las cláusulas 4 y 5 dan "false"), y en
+% estas los elementos son tratados como términos y se instancian en R tanto
+% varibales como átomos instanciados.
+%
+% Si R llega a estar completamente instanciada, las cláusulas 2 y 3 evaluarán
+% siempre a "false", y en las cláusulas restantes todos los predicados permiten
+% utilizar los elementos de R instanciados.
 %
 quitar(_,[],[]).
 
@@ -288,10 +282,14 @@ quitar(E,[X|XS],[Y|R]):- ground([Y|R]), nonvar(E), E\=Y, Y=X, not(member(E,R)), 
 % que eso trae.
 %
 % Particularmente, cant_distintos se cuelga si se pasa una lista no instanciada.
-% Dada una lista L instanciada, 
-%   Si S esta instanciado, se devuelve true o false dependiendo de la validez de el predicado.
-%   Si S no esta instanciado, se devuelve en S la cantidad de elementos distintos de L.
 %
+% Dada una lista L instanciada,
+%   Si S esta instanciado, se devuelve true o false dependiendo de la validez
+%   de el predicado.
+%
+%   Si S no esta instanciado, se devuelve en S la cantidad de elementos
+%   distintos de L.
+
 cant_distintos([],0).
 cant_distintos([X|XS],S):- quitar(X,XS,SinX), cant_distintos(SinX,Srec), S is 1+Srec.
 
@@ -308,7 +306,7 @@ cant_distintos([X|XS],S):- quitar(X,XS,SinX), cant_distintos(SinX,Srec), S is 1+
 % ("string_codes(M,Mascii)")se tiene que siempre a Mascii instanciado, con lo
 % cual la especificación de string_codes nos asegura que funcionará
 % correctamente sin depender de la instanciación de M.
-%
+
 descifrar(S,M):-
     palabras(S,P), palabras_con_variables(P,Pvar),
 
