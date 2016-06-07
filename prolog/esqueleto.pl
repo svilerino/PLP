@@ -272,25 +272,21 @@ aplicar_var(A,[(B,_)|M],V):- A \= B, aplicar_var(A,M,V).
 % de L distintos del término E. En caso de estar instanciada, se tratará de
 % unificar con los elementos de R con los de L distintos del término E 
 %
-%quitar(_,[],[]).
-%quitar(E,[X|XS],R):- E==X, quitar(E,XS,R).
-%quitar(E,[X|XS],[X|R]):- E\==X, quitar(E,XS,R).
-
 quitar(_,[],[]).
-quitar(E,[X|XS],R):- E==X, quitar(E,XS,R).
-quitar(E,[X|XS],[X|R]):- E\==X, quitar(E,XS,R).
 
-quitar(E,[X|XS],R):- nonvar(E),maplist(var,[X|XS]), ground(R), E=X, quitar(E,XS,R).
-quitar(E,[X|XS],[Y|R]):- nonvar(E), maplist(var,[X|XS]), ground([Y|R]), E\=X, X=Y, quitar(E,XS,R).
+quitar(E,[X|XS],R):- var(R), E==X, quitar(E,XS,R).
+quitar(E,[X|XS],[X|R]):- var(R), E\==X, quitar(E,XS,R).
 
-%quitar(E,L,R):- exclude(iguales(E),L,R).
-%%iguales(X,Y) TODO: Enviar mail preguntando como es la reversibilidad de ==
-%iguales(X,Y):- X==Y.
+quitar(E,[X|XS],R):- ground(R), nonvar(E), not(member(E,R)), E=X, quitar(E,XS,R).
+quitar(E,[X|XS],[Y|R]):- ground([Y|R]), nonvar(E), E\=Y, Y=X, not(member(E,R)), quitar(E,XS,R).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % cant_distintos(+L, ?S)
 %
-% Si L no esta instanciada, se llama a quitar(X,XS,SinX) rompiendo la precondicion de que L debe estar al menos semi-instanciada con los problemas que eso trae.
+% Si L no esta instanciada, se llama a quitar(X,XS,SinX) rompiendo la
+% precondicion de que L debe estar al menos semi-instanciada con los problemas
+% que eso trae.
+%
 % Particularmente, cant_distintos se cuelga si se pasa una lista no instanciada.
 % Dada una lista L instanciada, 
 %   Si S esta instanciado, se devuelve true o false dependiendo de la validez de el predicado.
@@ -301,14 +297,27 @@ cant_distintos([X|XS],S):- quitar(X,XS,SinX), cant_distintos(SinX,Srec), S is 1+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % descifrar(S, M)
+%
 descifrar(S,M):-
     palabras(S,P), palabras_con_variables(P,Pvar),
-    cant_distintos(Pvar,Antes),
-    maplist(diccionario_lista,Pvar), %Pvar unifica con palabras del diccionario ascii
-    cant_distintos(Pvar,Despues),
-    Antes = Despues, %Evitamos una unificacion que asigne una letra a 2 variables distintas
-    juntar_con(Pvar,32,Mascii), %Mascii es Pvar, pero en una sola lista poniendo un espacio entre las palabras.
-    string_codes(M,Mascii). %M es Mascii pero en chars
+
+    % Unificamos cada Palabra de variables con palabras del diccionario ascii.
+    % Podrían haber errores con palabras de igual longitud y letras iguales en
+    % la misma posición, filtramos esos casos luego
+    maplist(diccionario_lista,Pvar),
+
+    %Mascii es Pvar, pero en una sola lista poniendo un espacio ascii entre las
+    %palabras.
+    juntar_con(Pvar,32,Mascii),
+
+    %Nos aseguramos que el mapeo sea valido y no haya asignado una misma letra a
+    %dos atomos distintos (a sus variables asignadas en palabras_con_variables
+    %en realidad)
+    quitar(espacio,S,Atomos),cant_distintos(Atomos,Cant_caracteres_distintos),
+    quitar(32,Mascii,Letras_ascii), cant_distintos(Letras_ascii,Cant_caracteres_distintos),
+
+    %M es un string que se corresponde con Mascii
+    string_codes(M,Mascii).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % descifrar_sin_espacios(S, M)
@@ -318,7 +327,7 @@ descifrar_sin_espacios(S,M):-
     length(S,Letras),
 
     %Con_max_espacios es la longitud si se intercala un espacio entre letra y
-    %letra.
+    %letra en S.
     Con_max_espacios is Letras*2-1,
 
     between(Letras,Con_max_espacios,Long_S_con_espacios),
@@ -332,7 +341,7 @@ descifrar_sin_espacios(S,M):-
     not(nth1(1,S_con_espacios,espacio)),
 
     %Optimizacion para no considerar casos que terminan con un espacio
-    not(nth1(Long_S_con_espacios,S_con_espacios,espacio)),
+    not(last(S_con_espacios,espacio)),
 
     %Optimizacion para no considerar casos que tienen espacios consecutivos
     not(nextto(espacio,espacio,S_con_espacios)),
@@ -343,7 +352,8 @@ descifrar_sin_espacios(S,M):-
 % mensajes_mas_parejos(S, M)
 mensajes_mas_parejos(S, M) :-
     setof((Std,Msg),(descifrar_sin_espacios(S,Msg),std_mensaje(Msg,Std)),Msgs_con_std),
-    %El resultado ya viene ordenado y sin repetidos, gracias a setof y que pusimos primero el STD en la lista
+    %El resultado esta ordenado y sin repetidos, gracias a setof y que pusimos
+    %el STD como primera componente de las tuplas
     Msgs_con_std = [(Std_min,_)|_],
     member((Std,M),Msgs_con_std),
     Std =< Std_min.
@@ -355,12 +365,12 @@ std_mensaje(S,STD):-
     desviacion_estandar(Longs,STD).
 
 
-%desviacion_estandar(List,STD)
+%desviacion_estandar(List:list(number),STD)
 desviacion_estandar(L, STD):-
     length(L,Cant),
     media(L,Media),
     aggregate_all(sum(Sumando),(member(X,L),Sumando is (X-Media)^2),Sum),
     STD is sqrt(Sum / Cant).
 
-%media(List,Mean)
+%media(List:list(number),Mean)
 media(L,M):- length(L,Cant), sum_list(L,Sum), M is Sum / Cant.
