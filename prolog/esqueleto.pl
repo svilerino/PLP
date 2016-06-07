@@ -374,3 +374,54 @@ desviacion_estandar(L, STD):-
 
 %media(List:list(number),Mean)
 media(L,M):- length(L,Cant), sum_list(L,Sum), M is Sum / Cant.
+
+
+%------------- Tests -----------------
+%test(#ej, #test)
+% Ej1
+% leer diccionario como lista de ascii
+test(1, 1) :- aggregate_all(bag(X), (cargar("dicc0.txt"), diccionario_lista(X)), 
+  [[101, 108], [108, 97], [99, 97, 115, 97], [99, 111, 115, 97]]).  % Notar que esta es la lista de las palabras del dicc pasadas a ascii
+% verificar si una palabra como lista de ascii pertenece al dicc.
+test(1, 2) :- cargar("dicc0.txt"), diccionario_lista([101, 108]).%Si esta en el dicc
+test(1, 3) :- cargar("dicc0.txt"), diccionario_lista([101, 18]).%No esta en el dicc(no unifica, da false)
+
+%Ej2
+test(2, 1) :- juntar_con([[x],[x,y],[z]],a, [x, a, x, y, a, z]).
+
+%Ej3
+test(3, 1) :- ej(1, S), palabras(S, [[rombo, cuadrado], [perro, cuadrado, sol, cuadrado]]).
+
+%Ej4
+%% test(4, 1, LaBolsa) :- asignar_var(rombo, [], M), bagof(X, member((X, _), M), LaBolsa).
+
+%% M = [(rombo, _G4012)],
+%% false.
+%% ?- asignar_var(cuadrado, [(rombo, _G4012)], M).
+%% M = [(cuadrado, _G4013),(rombo, _G4012)],
+%% false.
+%% ?- asignar_var(rombo, [(cuadrado, _G4013),(rombo, _G4012)], M).
+%% M = [(cuadrado, _G4013),(rombo, _G4012)],
+%% false.
+
+%Ej 5
+
+%Ej 6
+test(6, 1) :-  quitar(z,[A,B,A,z], L), L == [A, B, A].
+test(6, 2) :-  quitar(A,[A,B,A,z], L), L == [B,z].
+
+%Ej 7
+test(7, 1) :- cant_distintos([0, 3, 0, 3, 4, 5, 6], 5).
+test(7, 2) :- cant_distintos([0, 1, 2, 3, 4, 5, 6], 7).
+
+%Ej 8
+
+test(8, 1) :- cargar("dicc0.txt"), ej(1, S), descifrar(S, "la casa").
+test(8, 2) :- cargar("dicc0.txt"), ej(2, S), descifrar(S, "la cosa").
+test(8, 3) :- cargar("5000_formas.txt"), ej(3, S), descifrar(S, "federación").
+
+% Ej 9
+test(9, 1) :- cargar("dicc1.txt"), ej(3, S), bagof(M, descifrar_sin_espacios(S, M), Sal), Sal = ["casa miento", "casa de flor", "casa flor de"].
+
+%Ej 10
+test(10, 1) :- cargar("dicc1.txt"), ej(3, S), bagof(M, mensajes_mas_parejos(S, M), MyBag), MyBag = ["casa de flor", "casa flor de"].
