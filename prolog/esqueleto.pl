@@ -209,7 +209,8 @@ aplicar_var(A,[(B,_)|M],V):- A \= B, aplicar_var(A,M,V).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % quitar(?E,+L,?R)
-% L puede ser una lista semi-instanciada
+% L puede ser una lista semi-instanciada. En caso de que lo sea, R ha de estar
+% completamente instanciada.
 %
 % ?E: El predicado funciona tanto este E instanciada como si no, ya que en
 % las clausulas se utilizan operadores que comparan a E visto como término, con
