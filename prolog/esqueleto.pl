@@ -466,18 +466,16 @@ test(2, 1) :- juntar_con([[x],[x,y],[z]],a, [x, a, x, y, a, z]).
 test(3, 1) :- ej(1, S), palabras(S, [[rombo, cuadrado], [perro, cuadrado, sol, cuadrado]]).
 
 %Ej4
-%% test(4, 1, LaBolsa) :- asignar_var(rombo, [], M), bagof(X, member((X, _), M), LaBolsa).
-
-%% M = [(rombo, _G4012)],
-%% false.
-%% ?- asignar_var(cuadrado, [(rombo, _G4012)], M).
-%% M = [(cuadrado, _G4013),(rombo, _G4012)],
-%% false.
-%% ?- asignar_var(rombo, [(cuadrado, _G4013),(rombo, _G4012)], M).
-%% M = [(cuadrado, _G4013),(rombo, _G4012)],
-%% false.
+%Estan todos los elementos mapeados y al agregar repetidos no se agregan dos veces
+test(4, 1) :- aggregate_all(bag(X), (asignar_var(rombo, [], M), asignar_var(cuadrado, M, N),asignar_var(rombo, N, O), member((X, _), O)), [cuadrado, rombo]).
+%Todas las variables son distintas
+test(4, 2) :- aggregate_all(bag(X), (asignar_var(rombo, [], M), asignar_var(cuadrado, M, N),asignar_var(rombo, N, O), member((X, _), O)), ListaVars), cant_distintos(ListaVars, 2).
 
 %Ej 5
+%Para cada palabra, hay k variables libres donde k es la cantidad de letras de la palabra.
+test(5, 1) :- cargar("dicc0.txt"), ej(1, S), palabras(S, P), palabras_con_variables(P, V), 
+nth0(IdxLst, P, _), nth0(IdxLst, P, It1), nth0(IdxLst, V, It2)
+, cant_distintos(It1, CD1), cant_distintos(It2, CD2), CD1 == CD2.
 
 %Ej 6
 test(6, 1) :-  quitar(z,[A,B,A,z], L), L == [A, B, A].
