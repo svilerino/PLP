@@ -63,7 +63,7 @@ palabras(S, P) :- juntar_con(P, espacio, S), not((member(Palabra, P), member(esp
 % asignar_var(+A, ?MI, ?MF)
 %
 % +A: A debe estar instanciada pues los meta-predicados nonvar(A) de todas las
-% clausulas de este predicado asi lo fuerzan, y si A no estuviese instanciada,
+% cláusulas de este predicado asi lo fuerzan, y si A no estuviese instanciada,
 % ninguno de los dos predicados seria satisfacible.
 %
 % MI u MF debe estar instanciada (al menos una). En el caso contrario se 
@@ -98,10 +98,10 @@ palabras_con_variables(P,V):- actualizar_aplicar_mapeo(P,[],V).
 %
 %
 % +P: Si P no llega a estar instanciada, se entra en un bucle infinito entre
-% las dos primeras clausulas de este predicado (nunca se llega a entrar a la
-% tercera clausula). Al no estar instanciadas P y V, para poder aplicar la
-% primer clausula se unifican (P = V) y luego se unifican con la lista vacía.
-% Luego se retrocede en el backtracking y se entra en la segunda clausula,
+% las dos primeras cláusulas de este predicado (nunca se llega a entrar a la
+% tercera cláusula). Al no estar instanciadas P y V, para poder aplicar la
+% primer cláusula se unifican (P = V) y luego se unifican con la lista vacía.
+% Luego se retrocede en el backtracking y se entra en la segunda cláusula,
 % donde se unifica tanto a P como a V con una lista con al menos una lista
 % vacia como elemento, y se llama recursivamente al predicado, volviendo a
 % pasar todo lo que se explica a aquí. Es decir, se entra en bucle infinito
@@ -109,12 +109,12 @@ palabras_con_variables(P,V):- actualizar_aplicar_mapeo(P,[],V).
 % vacias, donde en cada paso de la recursión se agrega una nueva lista vacía.
 %
 % Si P estuviese semi-instanciada, además, al llegar a uno de sus elementos no
-% instanciados se cae en la tercer clausula de este predicado, y se viola la
+% instanciados se cae en la tercer cláusula de este predicado, y se viola la
 % especificación de asignar_var(A,MI,MF) al pasarle un A no instanciado.
 %
 %
 % +M: El motivo principal por el cual se requiere que M esté instanciada es que
-% al utilizarse la tercera clausula de este predicado, se utiliza el predicado
+% al utilizarse la tercera cláusula de este predicado, se utiliza el predicado
 % asignar_var(A,MI,MF) con tanto MI y MF no instanciados, violando la
 % especificación del predicado.
 %
@@ -135,7 +135,7 @@ actualizar_aplicar_mapeo([ [A|AS] |ASS],MI,[ [V|VS] |VSS]):-
 % variable), asi pues las explicaciones a continuación corresponden a los casos
 % +V y -V (ya que V es un parámetro reversible del predicado).
 %
-% Al tratar de utilizar la primer clausula, se unificará la variable A con el
+% Al tratar de utilizar la primer cláusula, se unificará la variable A con el
 % primer componente del primer elemento/mapeo/tupla de M (que está
 % instanciada).  Luego, ocurrirá lo mismo con V y el segundo elemento de esta
 % tupla (este o no V instanciada, ya que en ambos casos se está unificando una
@@ -145,8 +145,8 @@ actualizar_aplicar_mapeo([ [A|AS] |ASS],MI,[ [V|VS] |VSS]):-
 % es un resultado válido, pero existen más resultados válidos si M tiene más
 % elementos/tuplas a continuación (A y V unificados con la primera y segunda
 % componente -respectivamente- de estas otras tuplas), los cuales no son
-% devueltos pues no se puede aplicar la segúnda clausula con estas
-% instanciaciones.  Esto ocurre pues la segunda clausula utiliza el predicado
+% devueltos pues no se puede aplicar la segúnda cláusula con estas
+% instanciaciones.  Esto ocurre pues la segunda cláusula utiliza el predicado
 % "\=" con A y B, y si bien B es unificado con el término correspondiente al
 % primer elemento de la primera tupla de M, A sigue siendo una variable no
 % unificada; y el predicado "\=" requiere que sus dos parámetros sean términos.
@@ -164,13 +164,13 @@ actualizar_aplicar_mapeo([ [A|AS] |ASS],MI,[ [V|VS] |VSS]):-
 %
 % +M: Si M no llegase a estar instanciada, ocurre (en escencia) lo mismo que
 % con el análisis de reversibilidad de A. Se logran unificar las cosas para
-% poder coincidir con las condiciones de la primera clausula (y en este caso
+% poder coincidir con las condiciones de la primera cláusula (y en este caso
 % se devuelve un resultado inválido), y luego no se analizan más casos ya que
 % ahora no se logra unificar de manera tal de llegar al llamado recursivo de la
-% segunda clausula. A continuación se explica porque.
+% segunda cláusula. A continuación se explica porque.
 %
-% En el caso de la primera clausula, al unificar los parámentros A y V con M
-% según la estructura descripta en la clausula, se termina unificando a M con
+% En el caso de la primera cláusula, al unificar los parámentros A y V con M
+% según la estructura descripta en la cláusula, se termina unificando a M con
 % una lista de la forma [(A,V) | _Gxxx] (con el valor instanciado de A y V si
 % estuvieran instanciadas, o las variables mismas en el caso contrario). Y este
 % resultado de M no es necesariamente correcto, ya que depende de en que se
@@ -179,9 +179,9 @@ actualizar_aplicar_mapeo([ [A|AS] |ASS],MI,[ [V|VS] |VSS]):-
 % _Gxxx que utilice a A y/o V.
 %
 % Si se admitiese que el valor de M obtenido por la unificación de la primera
-% clausula es correcto, el siguiente inconveniente es que existen más mapeos
+% cláusula es correcto, el siguiente inconveniente es que existen más mapeos
 % (infinitos, de hecho) los cuales nunca son recorridos pues nunca se llega
-% a considerar el llamado recursivo de la segunda clausula. Esto ocurre pues,
+% a considerar el llamado recursivo de la segunda cláusula. Esto ocurre pues,
 % nuevamente, la unificación no logra otorgar un valor a uno de los parámetros
 % del predicado "\=", en este caso dicho parámetro es B. B no unifica con
 % ningún valor pues M no está instanciada, con lo cual sigue siendo una variable
@@ -212,7 +212,7 @@ aplicar_var(A,[(B,_)|M],V):- A \= B, aplicar_var(A,M,V).
 % completamente instanciada.
 %
 % ?E: El predicado funciona tanto este E instanciada como si no, ya que en
-% las clausulas se utilizan operadores que comparan a E visto como término, con
+% las cláusulas se utilizan operadores que comparan a E visto como término, con
 % lo cual trabajar con una variable o algo instanciado será interpretado de la
 % misma manera. 
 %
@@ -220,17 +220,17 @@ aplicar_var(A,[(B,_)|M],V):- A \= B, aplicar_var(A,M,V).
 % +L: Debemos analizar caso por caso para explicar bien por qué L ha de estar al
 % menos semi-instanciada:
 %
-% Si L no está instanciada, R y E lo están: Se entrará en la primera clausula
+% Si L no está instanciada, R y E lo están: Se entrará en la primera cláusula
 % sólo si R está instanciada en la lista vacía, en cuyo caso el resultado de L
 % será una lista vacía, lo cual es correcto. El inconveniente ocurre luego, pues
 % existen otras posibles instanciaciones de L (ej: [E]) que debería devolver
 % el predicado pero no lo hace.
 %
-% Tanto en la segunda como tercera clausula se unifica a L con una no vacía. En
-% el caso de la segunda clausula, el predicado "E==X" falla ya que X es una
+% Tanto en la segunda como tercera cláusula se unifica a L con una no vacía. En
+% el caso de la segunda cláusula, el predicado "E==X" falla ya que X es una
 % variable fresca que se compara contra E, que es una variable instanciada (y
 % la comparación de términas fallará). Justamente aquí se dejan de considerar
-% las demás posibles instanciaciones válidas de L, pues es la clausula donde
+% las demás posibles instanciaciones válidas de L, pues es la cláusula donde
 % se considera que L originalmente tenía elementos iguales a E y que fueron
 % quitados de R.
 %
@@ -248,15 +248,15 @@ aplicar_var(A,[(B,_)|M],V):- A \= B, aplicar_var(A,M,V).
 % comparan términos, y sea E una variable o una instancia, estos predicados
 % darán los mismos resultados.
 %
-% Si L y R no están instanciadas y E lo está: La primera clausula siempre
-% unificará L con R y con []. En el caso de la segunda clausula, ocurrirá lo
+% Si L y R no están instanciadas y E lo está: La primera cláusula siempre
+% unificará L con R y con []. En el caso de la segunda cláusula, ocurrirá lo
 % mismo que en los casos analizados previamente (es decir, nunca se evaluará
-% en true), y por último se llega a la tercera clausula donde se unifica
+% en true), y por último se llega a la tercera cláusula donde se unifica
 % a L y R como dos listas no vacías que tienen el mismo primer elemento. Dicha
-% clausula se evaluará en true pues X se unifica con una variable fresca que
+% cláusula se evaluará en true pues X se unifica con una variable fresca que
 % jamás coincidirá con la instanciación de E y además el llamado recursivo
 % repetirá los pasos previos con la cola de las listas L y R (que eventualmente
-% serán unificadas al reevaluarse la primera clausula). Es decir, L y R siempre
+% serán unificadas al reevaluarse la primera cláusula). Es decir, L y R siempre
 % terminarán unificadas para todos los resultados devueltos, y en cada paso
 % se les agregara una variable fresca como elemento, pero nunca se asegura que
 % estas variables frescas serán distintas de E en R ni se toman en cuenta
@@ -296,7 +296,18 @@ cant_distintos([],0).
 cant_distintos([X|XS],S):- quitar(X,XS,SinX), cant_distintos(SinX,Srec), S is 1+Srec.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% descifrar(S, M)
+% descifrar(+S,?M)
+%
+% +S: S ha de estar instanciada pues sino se invoca al predicado "palabras(S,P)"
+% con dos variables no instanciadas, lo cual viola su especificación.
+%
+%
+% ?M: El unico predicado donde se utiliza a M es en string_codes, el cual tiene
+% como especificación "string_codes(?String,?Codes)", necesitando que S este
+% instanciada, al momento de utilizar dicho predicado
+% ("string_codes(M,Mascii)")se tiene que siempre a Mascii instanciado, con lo
+% cual la especificación de string_codes nos asegura que funcionará
+% correctamente sin depender de la instanciación de M.
 %
 descifrar(S,M):-
     palabras(S,P), palabras_con_variables(P,Pvar),
@@ -320,7 +331,24 @@ descifrar(S,M):-
     string_codes(M,Mascii).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% descifrar_sin_espacios(S, M)
+% descifrar_sin_espacios(+S, ?M)
+%
+% +S: S ha de estar instanciada, pues caso contrario al aplicar la cláusula con
+% el predicado "quitar(espacio,S_con_espacios,S)" se viola la especificación de
+% "quitar". Ocurre que S_con_espacios es una lista semi-instanciada (de hecho,
+% todos sus elementos son variables libres) y S también lo es (ya que al
+% unificar la cláusula previa "length(S,Letras)", S es semi-instanciada con una
+% en cada rama del backtracking con una longitud que se incrementa de a un
+% elemento). S_con_espacios está semi-instanciada por el mismo motivo (ver la
+% cláusula "length(S_con_espacios,Long_S_con_espacios)", donde
+% Long_s_con_espacios está instanciada mediante el predicado "between").
+%
+%
+% ?M: Al igual que en el análisis de reversibilidad del ejercicio previo, aquí
+% la única cláusula que utiliza la variable M es "descifrar". Dado que S ha
+% de estar instanciada, se observa que S_con_espacios también lo estará al momento
+% de evaluar está cláusula, la cual en su especificación admite que su segundo
+% parámentro (en este caso M) este tanto instanciado como que no.
 
 descifrar_sin_espacios(S,M):-
     not(member(espacio,S)), %verificacion del input
@@ -349,7 +377,21 @@ descifrar_sin_espacios(S,M):-
     descifrar(S_con_espacios,M).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% mensajes_mas_parejos(S, M)
+% mensajes_mas_parejos(+S, ?M)
+%
+% +S: S ha de estar instanciada pues sin ninguna unificación previa es utilizada
+% por el predicado "descifrar_sin_espacios", el cual requiere que lo esté.
+%
+%
+% ?M: La única cláusula donde se utiliza la variable M es en "member((Std,M),Msgs_con_std)",
+% y en ese caso Msgs_con_std se encuentra instanciada por la primer clausula
+% de la implementación. La especificación de "member", a su vez, tiene a ambos
+% parámetros reversibles, con lo cual la clásula en cuestión que utiliza a M
+% debería instanciar a M en caso de que esté libre, o debería verificar que
+% que el M instanciado al utilizar "mensajes_mas_parejos" coincida con alguno
+% de los mensajes con menor desviación estándar de la longitud de las palabras
+% de los mensajes descifrados.
+
 mensajes_mas_parejos(S, M) :-
     setof((Std,Msg),(descifrar_sin_espacios(S,Msg),std_mensaje(Msg,Std)),Msgs_con_std),
     %El resultado esta ordenado y sin repetidos, gracias a setof y que pusimos
@@ -359,20 +401,53 @@ mensajes_mas_parejos(S, M) :-
     Std =< Std_min.
 
 
-% std_mensaje(String,STD)
+% std_mensaje(+String,-STD)
+%
+% +String: Ha de estar instanciado ya que es utilizado (sin una unificación previa)
+% como parámetro del predicado "split_string" en el generador de valores del
+% predicado "aggregate_all". Este predicado, "split_string" especificá que
+% S ha de estar instanciado.
+%
+%
+% -STD: Nuevamente, para no violar la especificación de "desviacion_estandar"
+% (que se encuentra más adelante en este documento), STD ha de estar libre.
+
 std_mensaje(S,STD):-
     aggregate_all(bag(L),(split_string(S," "," ",Palabras),member(P,Palabras),string_length(P,L)),Longs),
     desviacion_estandar(Longs,STD).
 
 
-%desviacion_estandar(List:list(number),STD)
+%desviacion_estandar(+List:list(number),-STD)
+%
+% +List: La utilización del predicado "media" obliga a que List tenga que ser
+% una variable instanciada (y no solo eso, sino que a su vez sea una lista de
+% números).
+%
+%
+% -STD: Al igual que con la especificación de "media" (más adelante), el
+% predicado "is" en su especificación indica que su primer parámetro a de estar
+% no instanciado. Para más detalles, ver el análisis del predicado "media".
+
 desviacion_estandar(L, STD):-
     length(L,Cant),
     media(L,Media),
     aggregate_all(sum(Sumando),(member(X,L),Sumando is (X-Media)^2),Sum),
     STD is sqrt(Sum / Cant).
 
-%media(List:list(number),Mean)
+
+%media(+List:list(number),-Mean)
+%
+% +List: Ha de ser una lista de números instanciada pues así lo requiere la
+% cláusula que utiliza el predicado "sum_list", caso contrario se viola su
+% especificación ("sum_list(+List,-Sum)").
+%
+%
+% -Mean: Ha de ser una variable no instanciada para no violar la especificación
+% del predicado "is" ("-Number is +Expr"). Si bien pareciera funcionar en caso
+% de que Mean esté instanciada, la documentación nos da esta especificación que
+% da a entender que podría fallar (en algún caso o implementación del intérprete
+% de prolog).
+%
 media(L,M):- length(L,Cant), sum_list(L,Sum), M is Sum / Cant.
 
 
