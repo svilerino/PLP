@@ -62,25 +62,24 @@ palabras(S, P) :- juntar_con(P, espacio, S), not((member(Palabra, P), member(esp
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % asignar_var(+A, ?MI, ?MF)
 %
-% MI u MF debe estar instanciada (al menos una). En el caso contrario se entra
-% en un ciclo infinito que no recorre todos los posibles valores.
-%
 % +A: A debe estar instanciada pues los meta-predicados nonvar(A) de todas las
-% clausulas de este predicado asi lo fuerzan. Si no lo estuviera, y se tiene una
-% combinacion de variables instanciadas que nos lleva a la primera clausula, esta
-% devuelve error ya que el "pattern matching" de la clausula no permite unificar
-% a la variable A, y luego el predicado nonvar(A) devuelve false.
+% clausulas de este predicado asi lo fuerzan, y si A no estuviese instanciada,
+% ninguno de los dos predicados seria satisfacible.
 %
-%Por otro lado,
+% MI u MF debe estar instanciada (al menos una). En el caso contrario se 
+% generan tanto en MI como en MF listas infinitas, que terminan con (A, _).
 %
-%asignar_var(A, MI, MI): unifica cuando le pasan lo mismo en los argumentos 2 y 3(ambos instanciados) 
-% y se quiere ver si A esta en el diccionario MI, de eso se encarga la clausula member((A, _), MI).
-%
-%En el ultimo caso, se tiene
-%
-% Si MI esta instanciada y MF no,
-% entonces MF va a unificar cuando la tupla (A, _) no se encuentre ya en MI.
-% Si MF esta instanciada y MI no, MI se unifica con la cola de MF siempre y cuando (A, _) no este en MI.
+% El primer predicado sirve para el caso en que se intenta definir una variable
+% A que ya existe en la lista MF. En este caso, MI tiene que unificar con MF.
+% El segundo predicado unifica MF con una lista que tiene en la cabeza a la nueva 
+% variable A, acompañada en la tupla de una variable fresca, y la cola unificada
+% con MI.
+% 
+% Este punto funciona porque abusa del hecho que prolog reemplaza por variables 
+% frescas cuando se escribe un guion bajo. Utilizar member((A,_), MI) para ver
+% si la variable A (junto con su variable libre) ya esta definida en la lista 
+% funciona porque al ser libre puede unificar con cualquier cosa, incluyendo otra 
+% variable libre.
 asignar_var(A, MI, MI):- nonvar(A), member((A, _), MI).
 asignar_var(A, MI, [(A, _) | MI]):- nonvar(A), not(member((A, _), MI)).
 
